@@ -1,0 +1,46 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100vh;
+  width: 100vw;
+  color: #000000;
+}
+
+.clock {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 5rem;
+  text-shadow: 15px;
+  border-radius: 50%;
+}
+
+#time {
+  font-size: 10rem;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  margin-bottom: 3rem;
+}
+
+h2 {
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+  color: red;
+}
+
+@media (max-width: 700px) {
+  #time {
+    font-size: 6rem;
+  }
+}
