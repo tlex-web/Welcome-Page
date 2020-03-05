@@ -16,6 +16,10 @@ body {
   color: #000000;
 }
 
+#background-image {
+  object-fit: cover;
+}
+
 .clock {
   position: fixed;
   background: rgba(0, 0, 0, 0.2);
@@ -42,5 +46,12 @@ h2 {
 @media (max-width: 700px) {
   #time {
     font-size: 6rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  body {
+      flex-direction: row;
+      height: 100vh;
   }
 }

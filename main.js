@@ -13,15 +13,11 @@ function showTime() {
         min = today.getMinutes(),
         sec = today.getSeconds();
 
-
-// Set AM or PM
-  const amPm = hour >= 12 ? 'PM' : 'AM';
-
-// 12hr Format
-  hour = hour % 12 || 12;
+// 24hr Format
+  hour = hour % 24;
 
 // Output Time
-  time.innerHTML = `${hour}<span>:</span>${addZero(min)}<span>:</span>${addZero(sec)} ${amPm}`;
+  time.innerHTML = `${hour}<span>:</span>${addZero(min)}<span>:</span>${addZero(sec)}`;
 
   setTimeout(showTime, 1000);
 }
@@ -40,15 +36,15 @@ function setBbGreet() {
 
   if(hour < 12) {
     //Morning
-    document.body.style.backgroundImage = "url('lib/morning.jpg')";
+    document.getElementById('background-image').style.backgroundImage = "url('lib/morning.jpg')";
     greeting.textContent = 'Good Morning';
   } else if (hour < 18) {
     // Afternoon
-    document.body.style.backgroundImage = "url('lib/noon.jpg')";
+    document.getElementById('background-image').style.backgroundImage = "url('lib/noon.jpg')";
     greeting.textContent = 'Good Afternoon';
   } else {
     // Evening
-    document.body.style.backgroundImage = "url('lib/night.jpg')";
+    document.getElementById('background-image').style.backgroundImage = "url('lib/night.jpg')";
     greeting.textContent = 'Good Evening';
     document.body.style.color = 'white';
   }
