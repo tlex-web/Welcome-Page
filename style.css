@@ -17,7 +17,10 @@ body {
 }
 
 #background-image {
-  object-fit: cover;
+  object-fit: fill;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 .clock {
