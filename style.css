@@ -14,6 +14,7 @@ body {
   height: 100vh;
   width: 100vw;
   color: #000000;
+  position: relative;
 }
 
 #background-image {
@@ -27,8 +28,9 @@ body {
   position: fixed;
   background: rgba(0, 0, 0, 0.2);
   padding: 5rem;
-  text-shadow: 15px;
-  border-radius: 50%;
+  background: linear-gradient(to right, #fff, #333);
+  background-clip: text;
+  color: transparent;
 }
 
 #time {
@@ -43,7 +45,37 @@ h1 {
 h2 {
   margin-bottom: 0.5rem;
   opacity: 0.6;
-  color: red;
+  background: linear-gradient(to right, #fff, #333);
+  background-clip: text;
+  color: transparent;
+}
+
+.footer {
+  height: 5%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: absolute;
+  bottom: 0;
+  padding: 0 3rem;
+}
+
+.lead {
+  font-size: 1.6rem;
+}
+
+.pexel {
+  font-size: 1rem;
+}
+
+.pexel a {
+  text-decoration: none;
+  color: coral;
+}
+
+.pexel a:hover {
+  cursor: pointer;
 }
 
 @media (max-width: 700px) {
