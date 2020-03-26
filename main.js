@@ -127,7 +127,7 @@ function setBbGreet() {
 			document.getElementById("background-image").style.backgroundImage = "url('lib/clouds-daylight-forest-landscape-592077.jpg')";
 			greeting.textContent = "Good Evening";
 			break;
-		case 24:
+		case 0:
 			document.getElementById("background-image").style.backgroundImage = "url('lib/red-and-blue-hot-air-balloon-floating-on-air-on-body-of-36487.jpg')";
 			greeting.textContent = "Good Night";
 			break;
