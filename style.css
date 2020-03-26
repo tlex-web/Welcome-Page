@@ -29,6 +29,7 @@ body {
   padding: 5rem;
   background: linear-gradient(to right, #fff, #333);
   background-clip: text;
+  -webkit-background-clip: text;
   color: transparent;
 }
 
@@ -46,6 +47,7 @@ h2 {
   opacity: 0.6;
   background: linear-gradient(to right, #fff, #333);
   background-clip: text;
+  -webkit-background-clip: text;
   color: transparent;
 }
 
@@ -61,6 +63,7 @@ h2 {
   background-color: rgba(0, 0, 0, 0.5);
   color: #fff;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .lead {
