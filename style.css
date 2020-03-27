@@ -27,15 +27,14 @@ body {
   position: fixed;
   background: rgba(0, 0, 0, 0.2);
   padding: 5rem;
-  background: linear-gradient(to right, #fff, #333);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+  color: #fff;
 }
 
 #time {
+  display: inline-block;
   font-size: 10rem;
   margin-bottom: 0.5rem;
+  width: 40rem;
 }
 
 h1 {
@@ -45,10 +44,10 @@ h1 {
 h2 {
   margin-bottom: 0.5rem;
   opacity: 0.6;
-  background: linear-gradient(to right, #fff, #333);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+}
+
+#focus {
+  height: 3rem;
 }
 
 .footer {
@@ -84,22 +83,19 @@ h2 {
   cursor: pointer;
 }
 
-.image-source,
-.copyright {
-  transition: all 1s;
-}
-
-.image-source:hover,
-.copyright:hover {
-  transform: scale(1.2);
-  background: #333;
-  opacity: 0.8;
-  padding: 0.5rem;
-}
-
-@media (max-width: 700px) {
+@media (max-width: 567px) {
   #time {
     font-size: 6rem;
+  }
+  .footer {
+    font-size: 1rem;
+    padding: 0 1rem;
+    height: 0;
+    bottom: 2rem;
+    justify-content: space-evenly;
+  }
+  .footer .lead {
+    font-size: 1rem;
   }
 }
 

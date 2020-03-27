@@ -36,7 +36,7 @@ function setBbGreet() {
 
 	switch (hour) {
 		case 1:
-			document.getElementById("background-image").style.backgroundImage = "url('lib/bandoned-forest-industry-nature-34950.jpg')";
+			document.getElementById("background-image").style.backgroundImage = "url('lib/abandoned-forest-industry-nature-34950.jpg')";
 			greeting.textContent = "Good Night";
 			break;
 		case 2:
@@ -137,7 +137,7 @@ function setBbGreet() {
 // Get Name
 function getName() {
 	if (localStorage.getItem("name") === null) {
-		name.textContent = "[Enter Name]";
+		name.textContent = "[ Enter Name ]";
 	} else {
 		name.textContent = localStorage.getItem("name");
 	}
@@ -159,7 +159,7 @@ function setName(e) {
 // Get Focus
 function getFocus() {
 	if (localStorage.getItem("focus") === null) {
-		focus.textContent = "[Enter Focus]";
+		focus.textContent = "[ Enter Focus ]";
 	} else {
 		focus.textContent = localStorage.getItem("focus");
 	}
