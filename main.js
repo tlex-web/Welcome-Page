@@ -3,7 +3,22 @@
 const time = document.getElementById("time"),
 	greeting = document.getElementById("greeting"),
 	name = document.getElementById("name"),
-	focus = document.getElementById("focus");
+	focus = document.getElementById("focus"),
+	projectBox = document.querySelector(".projects"),
+	projectOverlay = document.querySelector(".project-overlay"),
+	projetcIcon = document.querySelector("i");
+
+// Show Projets
+
+projetcIcon.addEventListener("click", () => {
+	if (projectOverlay.style.visibility === "hidden") {
+		projectOverlay.style.visibility = "visible";
+		projectOverlay.classList.add("animation");
+	} else {
+		projectOverlay.style.visibility = "hidden";
+		projectOverlay.classList.remove("animation");
+	}
+});
 
 // Show Time
 
