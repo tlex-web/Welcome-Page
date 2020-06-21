@@ -47,16 +47,12 @@ function addZero(n) {
 // Set Background and greeting
 
 function setBbGreet() {
-	let randomImage = Math.floor(Math.random() * 18);
+	let randomImage = Math.floor(Math.random() * 17);
 
 	let today = new Date(),
 		hour = today.getHours();
 
 	body.style.backgroundImage = `url(lib/${randomImage}.jpg)`;
-
-	if (randomImage === 9 || randomImage === 18) {
-		time.style.color = "#000";
-	}
 
 	if (hour > 0 && hour < 6) {
 		greeting.textContent = "Good Night";
