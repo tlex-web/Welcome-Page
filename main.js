@@ -1,10 +1,10 @@
 // DOM Elements
 
-const time = document.getElementById("time"),
-	greeting = document.getElementById("greeting"),
+const greeting = document.getElementById("greeting"),
 	name = document.getElementById("name"),
 	focus = document.getElementById("focus"),
 	body = document.querySelector("#background-image"),
+	time = document.querySelector("#time"),
 	projectBox = document.querySelector(".projects"),
 	projectOverlay = document.querySelector(".project-overlay"),
 	projetcIcon = document.querySelector("i");
@@ -53,6 +53,10 @@ function setBbGreet() {
 		hour = today.getHours();
 
 	body.style.backgroundImage = `url(lib/${randomImage}.jpg)`;
+
+	if (randomImage === 9 || randomImage === 18) {
+		time.style.color = "#000";
+	}
 
 	if (hour > 0 && hour < 6) {
 		greeting.textContent = "Good Night";
