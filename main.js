@@ -54,13 +54,13 @@ function setBbGreet() {
 
 	body.style.backgroundImage = `url(lib/${randomImage}.jpg)`;
 
-	if (hour > 1 && hour <= 6) {
+	if (hour > 0 && hour <= 6) {
 		greeting.textContent = "Good Night";
 	} else if (hour > 6 && hour <= 12) {
 		greeting.textContent = "Good Morning";
 	} else if (hour > 12 && hour <= 18) {
 		greeting.textContent = "Good Afternoon";
-	} else if (hour > 18 && hour <= 1) {
+	} else {
 		greeting.textContent = "Good Evening";
 	}
 }
