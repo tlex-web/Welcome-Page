@@ -50,7 +50,7 @@ function setBbGreet() {
 	let randomImage = Math.floor(Math.random() * 17);
 
 	let today = new Date(),
-		hour = today.getHours();
+		hour = 19;
 
 	body.style.backgroundImage = `url(lib/${randomImage}.jpg)`;
 
