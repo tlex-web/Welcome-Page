@@ -50,17 +50,17 @@ function setBbGreet() {
 	let randomImage = Math.floor(Math.random() * 17);
 
 	let today = new Date(),
-		hour = 19;
+		hour = today.getHours();
 
 	body.style.backgroundImage = `url(lib/${randomImage}.jpg)`;
 
-	if (hour > 0 && hour < 6) {
+	if (hour > 0 && hour <= 6) {
 		greeting.textContent = "Good Night";
-	} else if (hour > 6 && hour < 12) {
+	} else if (hour > 6 && hour <= 12) {
 		greeting.textContent = "Good Morning";
-	} else if (hour > 12 && hour < 18) {
+	} else if (hour > 12 && hour <= 18) {
 		greeting.textContent = "Good Afternoon";
-	} else if (hour > 18 && hour < 0) {
+	} else if (hour > 18 && hour <= 0) {
 		greeting.textContent = "Good Evening";
 	}
 }
