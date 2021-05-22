@@ -4,8 +4,12 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="X-UA-Compatible" content="ie=edge" />
-		<link rel="stylesheet" href="style.css" />
-		<link href="https://fonts.googleapis.com/css?family=Quicksand&display=swap" rel="stylesheet" />
+		<link rel="stylesheet" href="css/style.css" />
+		<link
+			href="https://fonts.googleapis.com/css?family=Quicksand&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
 		<title>Clock Page</title>
 	</head>
 
@@ -39,22 +43,40 @@
 				<span id="name" contenteditable="true">Tim</span>
 			</h1>
 
-			<h2>What is your focus today?</h2>
-			<h2 id="focus" contenteditable="true"></h2>
+			<h2 id="motivation"></h2>
 		</div>
 
 		<!-- Credits -->
 
 		<footer class="footer">
 			<div class="image-source">
-				<p class="pexel">All background photos are <a href="https://optimistic-haibt-c4e9b3.netlify.app/">mine</a></p>
+				<p class="pexel">
+					All background photos are
+					<a href="https://optimistic-haibt-c4e9b3.netlify.app/"
+						>mine</a
+					>
+				</p>
 			</div>
 			<div class="copyright">
-				<p class="lead">All rights reserved &copy; 2020</p>
+				<p class="lead">
+					All rights reserved &copy; <span id="year"></span>
+				</p>
 			</div>
 		</footer>
 
-		<script src="https://kit.fontawesome.com/db98e725f6.js" crossorigin="anonymous"></script>
-		<script type="text/javascript" src="main.js" charset="utf-8"></script>
+		<script
+			src="https://kit.fontawesome.com/db98e725f6.js"
+			crossorigin="anonymous"
+		></script>
+		<script src="js/helpers.js"></script>
+		<script src="js/year.js"></script>
+		<script src="js/greeting.js"></script>
+		<script src="js/motivation.js"></script>
+		<script src="js/projects.js"></script>
+		<script
+			type="text/javascript"
+			src="js/main.js"
+			charset="utf-8"
+		></script>
 	</body>
 </html>
