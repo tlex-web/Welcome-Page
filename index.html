@@ -33,8 +33,24 @@
                 <i class="fas fa-cog"></i>
             </button>
         </div>
+        <div class="nav-center">
+            <div class="content-selector">
+                <button class="content-btn active" data-content="quote" title="Inspirational Quote">
+                    <i class="fas fa-quote-right"></i>
+                </button>
+                <button class="content-btn" data-content="fact" title="Random Fact">
+                    <i class="fas fa-lightbulb"></i>
+                </button>
+                <button class="content-btn" data-content="joke" title="Joke">
+                    <i class="fas fa-laugh"></i>
+                </button>
+                <button class="content-btn" data-content="word" title="Word of the Day">
+                    <i class="fas fa-book"></i>
+                </button>
+            </div>
+        </div>
         <div class="nav-right">
-            <button class="nav-btn" id="refresh-quote-btn" title="New Quote">
+            <button class="nav-btn" id="refresh-content-btn" title="Refresh Content">
                 <i class="fas fa-refresh"></i>
             </button>
         </div>
@@ -70,7 +86,6 @@
         <!-- Motivation Quote Widget -->
         <div class="glass-card quote-card">
             <div class="quote-content">
-                <i class="fas fa-quote-left quote-icon"></i>
                 <p class="quote-text" id="motivation">Loading inspiration...</p>
             </div>
         </div>
@@ -80,47 +95,18 @@
     <div class="overlay" id="images-overlay">
         <div class="overlay-content glass-panel">
             <div class="overlay-header">
-                <h2><i class="fas fa-images"></i> Image Gallery</h2>
+                <h2><i class="fas fa-images"></i> Background Images</h2>
                 <button class="close-btn" data-overlay="images-overlay">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="overlay-body">
-                <div class="storage-warning" id="storage-warning" style="display: none;"></div>
+                <p class="gallery-instructions" style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <i class="fas fa-info-circle"></i> Select images from the preset collection below. To add your own images, place them in the <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.5rem; border-radius: 4px;">img/</code> folder and add their paths to <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.5rem; border-radius: 4px;">CONFIG.presetImages</code> in <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.5rem; border-radius: 4px;">js/app.js</code>.
+                </p>
                 
-                <div class="upload-section">
-                    <label for="image-upload" class="upload-label">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Upload Images</span>
-                        <input type="file" id="image-upload" accept="image/*" multiple hidden>
-                    </label>
-                    <p class="upload-hint">Select multiple landscape images for best results (stored in browser localStorage)</p>
-                </div>
-                
-                <div class="gallery-tabs" id="gallery-tabs">
-                    <button class="tab-btn active" data-tab="uploaded">
-                        <i class="fas fa-upload"></i> Uploaded
-                    </button>
-                    <button class="tab-btn" data-tab="preset">
-                        <i class="fas fa-folder"></i> Preset
-                    </button>
-                </div>
-                
-                <div class="tab-content active" data-content="uploaded">
-                    <div class="gallery-grid" id="uploaded-gallery">
-                        <!-- Uploaded images will be dynamically added here -->
-                    </div>
-                </div>
-                
-                <div class="tab-content" data-content="preset">
-                    <div class="gallery-grid" id="preset-gallery">
-                        <!-- Preset images will be dynamically added here -->
-                    </div>
-                </div>
-                
-                <!-- Legacy single gallery (fallback) -->
-                <div class="gallery-grid" id="gallery-grid" style="display: none;">
-                    <!-- Images will be dynamically added here -->
+                <div class="gallery-grid" id="preset-gallery">
+                    <!-- Preset images will be dynamically added here -->
                 </div>
             </div>
         </div>

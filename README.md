@@ -18,12 +18,17 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 - **Editable Name** - Click to personalize your greeting
 - **Current Date** - Full date display with day of the week
 
-### 💡 Motivation
-- **Live API Integration** - Fetches inspirational quotes from Quotable API
-- **Smart Caching** - Stores quotes locally for offline use
-- **Fallback System** - Built-in collection of 20+ quotes if API unavailable
-- **Refresh Button** - Get a new quote anytime with one click
-- **Beautiful Typography** - Elegant quote presentation with glassmorphism
+### 💡 Dynamic Content
+- **Four Content Types**:
+  - **Inspirational Quotes** - Wisdom from great thinkers (API Ninjas + Quotable API)
+  - **Random Facts** - Learn something new every day (API Ninjas)
+  - **Clean Jokes** - Add some humor to your day (API Ninjas)
+  - **Word of the Day** - Expand your vocabulary with definitions (API Ninjas)
+- **Content Selector** - Easy navigation with icon buttons (quote/fact/joke/word)
+- **Smart Caching** - Stores content locally for offline use
+- **Refresh Button** - Get new content anytime with one click
+- **Persistent Selection** - Remembers your last content type preference
+- **Beautiful Typography** - Elegant presentation with glassmorphism
 
 ### 🌤️ Weather Widget
 - **Real-time Weather** - Displays current temperature and conditions
@@ -61,26 +66,54 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 ### Quick Start
 1. Clone or download this repository
 2. Open `index.html` in your browser
-3. **Optional**: Configure API keys (see Configuration below)
+3. **Optional**: Configure API keys for weather and dynamic content (see guides below)
 4. Upload your landscape images or add preset images to `img/` folder
 5. Customize your name and settings
 
+### 📚 Documentation Guides
+
+- **[API Keys Guide](API_KEYS_GUIDE.md)** - Step-by-step instructions to get free API keys for OpenWeatherMap and API Ninjas
+- **[Deployment Checklist](DEPLOYMENT_CHECKLIST.md)** - Complete checklist for deploying to Netlify with testing steps
+- **[Security Setup](NETLIFY_SECURITY.md)** - How to securely manage API keys with Netlify Functions
+
 ### Configuration
 
-#### Weather Widget Setup (Optional)
-To enable the weather widget:
+#### Weather Widget & Dynamic Content (Recommended)
+To enable all features with secure API key management:
 
-1. Get a free API key from [OpenWeatherMap](https://openweathermap.org/api)
-2. Open `js/app.js`
-3. Update the `CONFIG.weather.apiKey` with your key:
+1. **Get API Keys** (Free):
+   - [OpenWeatherMap API](https://openweathermap.org/api) - For weather widget
+   - [API Ninjas](https://api-ninjas.com) - For quotes, facts, jokes, and words
+   - See [API_KEYS_GUIDE.md](API_KEYS_GUIDE.md) for detailed instructions
+
+2. **Deploy to Netlify**:
+   - Follow [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for complete setup
+   - Add API keys as environment variables (never commit them to code)
+   - Netlify Functions will securely proxy API requests
+
+3. **Local Development** (Optional):
+   - Create `.env` file in project root (see `.env.example`)
+   - Add your API keys to `.env`
+   - Use Netlify CLI to test functions locally
+
+#### Alternative: Direct API Configuration (Not Recommended)
+If not deploying to Netlify, you can use direct API calls:
+
+1. Open `js/app.js`
+2. Update the CONFIG object:
    ```javascript
    weather: {
-       apiKey: 'your_api_key_here',
+       apiKey: 'your_openweathermap_key_here',
        units: 'metric', // or 'imperial' for Fahrenheit
-       updateInterval: 30 // minutes
+       updateInterval: 30, // minutes
+       useNetlifyFunction: false // Set to false for direct API
+   },
+   apiNinjas: {
+       apiKey: 'your_api_ninjas_key_here',
+       useNetlifyFunction: false // Set to false for direct API
    }
    ```
-4. Refresh the page - the weather widget will appear automatically
+⚠️ **Warning**: This exposes your API keys in the browser. Only use for local testing.
 
 #### Preset Images Setup
 To use local images from the `img/` folder instead of localStorage:

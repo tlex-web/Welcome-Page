@@ -1,21 +1,24 @@
 # Copilot Instructions - Modern Welcome Dashboard
 
 ## Project Overview
-A vanilla JavaScript browser homepage with glassmorphism UI, 3D parallax backgrounds, and localStorage persistence. Static site deployed to Netlify - no build process or backend.
+A vanilla JavaScript browser homepage with glassmorphism UI, 3D parallax backgrounds, and localStorage persistence. Static site deployed to Netlify with serverless functions for secure API integration - no build process required.
 
 ## Architecture & Key Files
 
 ### Core Structure
 - **`index.html`** - Single-page app with three overlays (images, calendar, settings)
 - **`js/app.js`** - Modular vanilla JS (no framework). Exports `window.WelcomeDashboard` API
-- **`css/style.css`** - CSS custom properties (`:root` variables), glassmorphism effects, 773 lines
+- **`css/style.css`** - CSS custom properties (`:root` variables), glassmorphism effects
+- **`netlify/functions/`** - Serverless functions for secure API proxying (weather, quotes, facts, jokes, word-of-day)
 
 ### State Management
 All state lives in `localStorage` with namespaced keys (`welcomePage_*`):
 - `userName` - Editable greeting name
-- `images` - Array of base64 image data URLs
+- `selectedImages` - Array of preset image paths from `img/` folder
 - `settings` - Parallax toggle, auto-cycle interval, time format
 - `currentImage` - Active background index
+- `lastWeather`, `lastQuote`, `lastFact`, `lastJoke`, `wordOfDay` - Cached API responses
+- `contentType` - Current content type (quote/fact/joke/word)
 
 State object in `app.js` mirrors localStorage and is single source of truth.
 
@@ -23,16 +26,30 @@ State object in `app.js` mirrors localStorage and is single source of truth.
 
 ### Local Testing
 ```powershell
-# Just open in browser - no server needed
+# IMPORTANT: Must use Netlify Dev server for API features
+netlify dev
+# Then open http://localhost:8888
+
+# For static HTML only (no weather/quotes):
 start index.html
 ```
+
+**Note**: Weather widget and dynamic content (quotes/facts/jokes/words) require Netlify Functions. Always use `netlify dev` for full feature testing.
 
 ### Deployment
 Deploys to Netlify via Git push (connected to GitHub). Configuration in `netlify.toml`:
 - Publish directory: `.` (root)
+- Functions directory: `netlify/functions` (auto-detected)
 - No build command
 - Headers for caching and security
 - SPA redirect: `/* → /index.html`
+
+**Environment Variables** (set in Netlify dashboard):
+- `WEATHER_API_KEY` - OpenWeatherMap API key
+- `WEATHER_UNITS` - `metric` or `imperial`
+- `API_NINJAS_KEY` - API Ninjas key for quotes/facts/jokes/words
+
+See `NETLIFY_SECURITY.md` for detailed deployment instructions.
 
 ### Adding Features
 1. Update DOM in `index.html` overlay sections
@@ -55,144 +72,185 @@ Deploys to Netlify via Git push (connected to GitHub). Configuration in `netlify
 - All animations use `var(--transition)` for consistency
 
 ### Image Handling
-Images stored as base64 in localStorage (5MB limit per origin). For new image features:
+**Images are NOT stored as base64 in localStorage** (removed due to 5MB quota issues). Instead:
+
 ```javascript
-const reader = new FileReader();
-reader.onload = (event) => {
-    addImage(event.target.result); // Adds to state.images array
-};
-reader.readAsDataURL(file);
+// Images stored as file paths in CONFIG.presetImages
+presetImages: [
+    'img/0.jpg',
+    'img/1.jpg',
+    'img/2.jpg'
+]
+
+// User selects which preset images to use
+function selectPresetImage(path) {
+    if (!state.selectedImages.includes(path)) {
+        state.selectedImages.push(path); // Store path only
+        saveSelectedImages();
+    }
+}
 ```
+
+**To add images**: Place files in `img/` folder and add paths to `CONFIG.presetImages` array. No upload feature - prevents localStorage quota errors.
 
 ## Integration Points
 
 ### Weather Widget Implementation
-Add real-time weather using OpenWeatherMap API (free tier):
+Real-time weather using OpenWeatherMap API via Netlify Function:
 
 ```javascript
 // In CONFIG object
 weather: {
-    apiKey: '', // Get from openweathermap.org/api
+    apiKey: '', // Empty in frontend - stored in Netlify env vars
+    useNetlifyFunction: true, // Always true for production
     units: 'metric', // or 'imperial'
     updateInterval: 30 // minutes
 }
 
-// Fetch weather
+// Fetch weather via Netlify Function
 async function updateWeather() {
-    const position = await getCurrentPosition(); // Use Geolocation API
+    const position = await getCurrentPosition(); // Geolocation API
+    
+    // Fallback chain: Geolocation → IP-based → Default (Zurich)
+    if (!position) {
+        const ipData = await fetch('https://ipapi.co/json/').then(r => r.json());
+        position = { latitude: ipData.latitude, longitude: ipData.longitude };
+    }
+    
     const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&units=${CONFIG.weather.units}&appid=${CONFIG.weather.apiKey}`
+        `/.netlify/functions/weather?lat=${position.latitude}&lon=${position.longitude}`
     );
     const data = await response.json();
-    displayWeather(data); // Update DOM with temp, condition, icon
+    displayWeather(data);
 }
 ```
 
-Add weather card in `index.html` main content area, use glassmorphism styling. Store last fetch in localStorage with timestamp to avoid excessive API calls.
+Weather function at `netlify/functions/weather.js` proxies OpenWeatherMap API. API key stored in Netlify environment variables. Implements caching with 30-minute intervals.
 
-### Motivational Quotes API
-Replace hardcoded array with API integration:
+### Dynamic Content System
+Four content types with API Ninjas and Quotable integration:
 
-**Option 1: ZenQuotes API** (no auth required)
+**Content Types**:
+1. **Quotes** - Inspirational quotes (API Ninjas + Quotable fallback)
+2. **Facts** - Random interesting facts (API Ninjas)
+3. **Jokes** - Clean jokes (API Ninjas)
+4. **Word of the Day** - Random word with definition (API Ninjas Dictionary + RandomWord)
+
 ```javascript
+// Content selector UI in navbar
+<div class="content-selector">
+    <button class="content-btn active" data-content="quote">
+        <i class="fas fa-quote-right"></i>
+    </button>
+    <button class="content-btn" data-content="fact">
+        <i class="fas fa-lightbulb"></i>
+    </button>
+    <button class="content-btn" data-content="joke">
+        <i class="fas fa-laugh"></i>
+    </button>
+    <button class="content-btn" data-content="word">
+        <i class="fas fa-book"></i>
+    </button>
+</div>
+
+// Fetch functions
 async function fetchQuote() {
-    try {
-        const response = await fetch('https://zenquotes.io/api/random');
-        const [quote] = await response.json();
-        elements.motivation.textContent = `"${quote.q}" — ${quote.a}`;
-    } catch (error) {
-        // Fallback to cached quote from localStorage
-        displayCachedQuote();
+    const category = CONFIG.apiNinjas.categories[Math.floor(Math.random() * CONFIG.apiNinjas.categories.length)];
+    const response = await fetch(`/.netlify/functions/api-ninjas-quote?category=${category}`);
+    const data = await response.json();
+    localStorage.setItem(CONFIG.storageKeys.lastQuote, JSON.stringify(data));
+    displayContent('quote', data);
+}
+
+async function fetchFact() {
+    const response = await fetch('/.netlify/functions/fact');
+    const data = await response.json();
+    displayContent('fact', data);
+}
+
+// Display with appropriate icon
+function displayContent(type, data) {
+    switch(type) {
+        case 'quote':
+            elements.motivation.innerHTML = `<i class="fas fa-quote-left quote-icon"></i> "${data.text}" — ${data.author}`;
+            break;
+        case 'fact':
+            elements.motivation.innerHTML = `<i class="fas fa-lightbulb quote-icon"></i> ${data.text}`;
+            break;
+        case 'joke':
+            elements.motivation.innerHTML = `<i class="fas fa-laugh quote-icon"></i> ${data.text}`;
+            break;
+        case 'word':
+            elements.motivation.innerHTML = `<i class="fas fa-book quote-icon"></i> <strong>${data.word}</strong>: ${data.definition}`;
+            break;
     }
 }
 ```
 
-**Option 2: Quotable API** (more reliable, CORS-friendly)
-```javascript
-async function fetchQuote() {
-    const response = await fetch('https://api.quotable.io/random?tags=inspirational');
-    const quote = await response.json();
-    // Cache to localStorage for offline use
-    localStorage.setItem('welcomePage_lastQuote', JSON.stringify(quote));
-}
-```
+**Netlify Functions**:
+- `netlify/functions/api-ninjas-quote.js` - Quotes with categories
+- `netlify/functions/fact.js` - Random facts
+- `netlify/functions/joke.js` - Clean jokes
+- `netlify/functions/word-of-day.js` - Word + definition (2-step API call)
 
-Always cache last successful quote for offline/rate-limit scenarios.
+All content cached in localStorage with fallback to hardcoded defaults. Content type persists across page refreshes.
 
-### Image Management Solutions
+### Image Management Solution
 
-**Approach 1: Netlify Large Media (Git LFS)**
-Use Netlify Large Media for image transformation and CDN delivery:
-
-1. Install Git LFS: `git lfs install`
-2. Configure `.lfsconfig`:
-   ```
-   [lfs]
-   url = https://quizzical-dijkstra-c67ddf.netlify.app/.netlify/large-media
-   ```
-3. Track images: `git lfs track "img/**"`
-4. Reference images in `app.js`:
-   ```javascript
-   const presetImages = [
-       'img/background1.jpg',
-       'img/background2.jpg',
-       'img/background3.jpg'
-   ];
-   ```
-5. Use Netlify transforms: `img/bg1.jpg?nf_resize=fit&w=1920`
-
-**Approach 2: Local img/ Folder Browser**
-Add image selector for files in `img/` directory:
+**Current Implementation**: Preset images from `img/` folder only (no upload feature)
 
 ```javascript
-// Add to CONFIG
+// CONFIG setup
 presetImages: [
-    'img/background1.jpg',
-    'img/background2.jpg',
-    // Auto-scan not possible in static site - manually list
+    'img/0.jpg',
+    'img/1.jpg',
+    'img/2.jpg',
+    // Add more paths here
 ]
 
-function renderImageSelector() {
+// Gallery renders preset images with select/deselect buttons
+function renderPresetGallery() {
     CONFIG.presetImages.forEach((path, index) => {
+        const isSelected = state.selectedImages.includes(path);
         const item = document.createElement('div');
-        item.className = 'preset-image-item';
+        item.className = 'gallery-item preset-item';
+        if (isSelected) item.classList.add('selected');
+        
         item.innerHTML = `
             <img src="${path}" alt="Preset ${index + 1}">
-            <button class="select-btn" data-path="${path}">Use This</button>
+            <button class="select-btn ${isSelected ? 'selected' : ''}" data-path="${path}">
+                <i class="fas fa-${isSelected ? 'check' : 'plus'}"></i>
+            </button>
         `;
-        elements.presetGallery.appendChild(item);
+        
+        // Click handler for select/deselect
+        selectBtn.addEventListener('click', () => {
+            isSelected ? deselectPresetImage(path) : selectPresetImage(path);
+        });
     });
 }
 
+// Store paths only (not base64)
 function selectPresetImage(path) {
     if (!state.selectedImages.includes(path)) {
         state.selectedImages.push(path);
-        saveSelectedImages(); // Store paths only, not base64
+        localStorage.setItem(CONFIG.storageKeys.selectedImages, JSON.stringify(state.selectedImages));
     }
 }
 ```
 
-Update gallery UI to show two tabs: "Uploaded" (base64, size warning) and "Preset" (from img/).
+**Benefits**:
+- ✅ No localStorage limits
+- ✅ No base64 encoding overhead
+- ✅ Better performance
+- ✅ Simple to add images (just drop files in `img/` folder and update CONFIG)
 
-**Approach 3: External Image Hosting**
-Use Cloudinary or Imgur for user uploads:
+**To add images**:
+1. Place image files in `img/` folder
+2. Add paths to `CONFIG.presetImages` array in `js/app.js`
+3. Refresh page
 
-```javascript
-async function uploadToCloudinary(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'YOUR_PRESET'); // Unsigned preset
-    
-    const response = await fetch(
-        'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload',
-        { method: 'POST', body: formData }
-    );
-    const data = await response.json();
-    return data.secure_url; // Store URL instead of base64
-}
-```
-
-Store image URLs in localStorage instead of base64 data.
+**Upload feature removed** to prevent QuotaExceededError. See `STORAGE_CLEANUP.md` for migration instructions.
 
 ### Calendar Authentication Patterns
 
@@ -298,19 +356,24 @@ All API integrations should:
 
 ### Browser localStorage Limits
 - ~5-10MB total per origin (browser-dependent)
-- Images are base64 (33% larger than binary)
-- No warning when approaching limit - fails silently
-- **Solution**: Use image URLs (Cloudinary/Netlify Large Media) or local `img/` folder references instead of base64
-- If keeping base64, implement size check:
-  ```javascript
-  function checkStorageSize() {
-      let total = 0;
-      for (let key in localStorage) {
-          total += localStorage[key].length + key.length;
-      }
-      return (total / 1024 / 1024).toFixed(2); // MB
-  }
-  ```
+- **Solution implemented**: Removed base64 image uploads, use preset image paths from `img/` folder
+- Only lightweight data stored: settings (~1KB), selected image paths (~500 bytes), cached API responses (~5KB total)
+- Total localStorage usage: < 50KB (vs 5MB+ with base64 images)
+
+```javascript
+// Check storage size
+function checkStorageSize() {
+    let total = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            total += (localStorage[key].length + key.length) * 2; // UTF-16 encoding
+        }
+    }
+    return total / 1024 / 1024; // MB
+}
+```
+
+If users have old base64 data, instruct them to run: `localStorage.removeItem('welcomePage_images')`. See `STORAGE_CLEANUP.md` for details.
 
 ### No Build Process
 - Cannot use imports/exports beyond native ES modules
@@ -319,11 +382,13 @@ All API integrations should:
 - CDN dependencies (Font Awesome, Google Fonts) in `index.html`
 - **API Keys**: Use Netlify Functions for secure API key management:
   1. Create functions in `netlify/functions/` directory
-  2. Add environment variables in Netlify dashboard (Site settings → Environment variables)
+  2. Add environment variables in Netlify dashboard (Site settings → Environment variables → Add a variable)
   3. Functions access keys via `process.env.VARIABLE_NAME`
   4. Frontend calls `/.netlify/functions/function-name` instead of external APIs
-  5. Example: `weather.js` and `quote.js` functions proxy API calls
+  5. Example functions: `weather.js`, `api-ninjas-quote.js`, `fact.js`, `joke.js`, `word-of-day.js`
   6. See `NETLIFY_SECURITY.md` for complete implementation guide
+  7. See `API_KEYS_GUIDE.md` for getting API keys
+  8. See `DEPLOYMENT_CHECKLIST.md` for testing checklist
 
 ### Performance Considerations
 - Parallax runs on `mousemove` - already throttled via CSS `transition: 0.1s`
@@ -335,5 +400,18 @@ When modifying:
 1. Test overlay open/close (ESC key, backdrop click, close button)
 2. Verify localStorage persistence (refresh page)
 3. Check mobile responsive behavior (overlays should be scrollable)
-4. Test with no images uploaded (default gradient)
+4. Test with no images selected (default gradient)
 5. Validate settings sync between UI controls and localStorage
+6. Test all content types (quote/fact/joke/word) with refresh button
+7. Verify weather widget displays with geolocation (or IP fallback)
+8. Check that Netlify Functions work via `netlify dev` (not direct file:// opening)
+9. Verify content type persists across page refreshes
+10. Test preset image selection/deselection
+
+## Key Files Reference
+- `NETLIFY_SECURITY.md` - Deployment and API key security guide
+- `API_KEYS_GUIDE.md` - Step-by-step API key signup instructions
+- `DEPLOYMENT_CHECKLIST.md` - Complete deployment and testing checklist
+- `STORAGE_CLEANUP.md` - Instructions for clearing old localStorage data
+- `TESTING_LOCALLY.md` - Local development with `netlify dev`
+- `.env.example` - Template for local environment variables

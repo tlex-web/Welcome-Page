@@ -13,19 +13,28 @@ const CONFIG = {
         lastQuote: 'welcomePage_lastQuote',
         lastWeather: 'welcomePage_lastWeather',
         weatherTimestamp: 'welcomePage_weatherTimestamp',
-        selectedImages: 'welcomePage_selectedImages'
+        selectedImages: 'welcomePage_selectedImages',
+        lastFact: 'welcomePage_lastFact',
+        lastJoke: 'welcomePage_lastJoke',
+        wordOfDay: 'welcomePage_wordOfDay',
+        contentType: 'welcomePage_contentType'
     },
     defaultSettings: {
         parallaxEnabled: true,
         changeInterval: 10,
         timeFormat24: true,
-        showSeconds: true
+        showSeconds: true,
+        contentType: 'quote' // 'quote', 'fact', 'joke', or 'word'
     },
     weather: {
         apiKey: '', // For local dev only - use Netlify Functions in production
         useNetlifyFunction: true, // Set to true when deployed to Netlify
         units: 'metric', // or 'imperial'
         updateInterval: 30 // minutes
+    },
+    apiNinjas: {
+        useNetlifyFunction: true, // Use Netlify Functions for secure API calls
+        categories: ['inspirational', 'success', 'wisdom', 'life', 'happiness']
     },
     presetImages: [
         // Add paths to images in img/ folder here
@@ -67,13 +76,13 @@ const CONFIG = {
 // ===== State Management =====
 const state = {
     userName: localStorage.getItem(CONFIG.storageKeys.name) || 'Tim',
-    images: JSON.parse(localStorage.getItem(CONFIG.storageKeys.images)) || [],
     selectedImages: JSON.parse(localStorage.getItem(CONFIG.storageKeys.selectedImages)) || [],
     settings: JSON.parse(localStorage.getItem(CONFIG.storageKeys.settings)) || CONFIG.defaultSettings,
     currentImageIndex: parseInt(localStorage.getItem(CONFIG.storageKeys.currentImage)) || 0,
     mousePosition: { x: 0, y: 0 },
     calendarConnected: false,
-    lastWeatherUpdate: parseInt(localStorage.getItem(CONFIG.storageKeys.weatherTimestamp)) || 0
+    lastWeatherUpdate: parseInt(localStorage.getItem(CONFIG.storageKeys.weatherTimestamp)) || 0,
+    currentContentType: localStorage.getItem(CONFIG.storageKeys.contentType) || 'quote'
 };
 
 // ===== Motivational Quotes =====
@@ -200,27 +209,140 @@ function updateGreeting() {
 // ===== Motivational Quote =====
 async function fetchQuote() {
     try {
-        // Use Netlify Function if available, otherwise direct API
-        const endpoint = window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost'
-            ? '/.netlify/functions/quote'
-            : 'https://api.quotable.io/random?tags=inspirational';
+        // Use API Ninjas if configured, otherwise fallback to Quotable
+        const useNetlify = CONFIG.apiNinjas.useNetlifyFunction && 
+            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
         
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error('API request failed');
+        let endpoint, data;
         
-        const data = await response.json();
-        
-        // Handle both API formats (direct Quotable API and our function)
-        const quoteData = data.text ? data : { text: data.content, author: data.author };
+        if (useNetlify) {
+            // Try API Ninjas first (better quality quotes)
+            const category = CONFIG.apiNinjas.categories[Math.floor(Math.random() * CONFIG.apiNinjas.categories.length)];
+            endpoint = `/.netlify/functions/api-ninjas-quote?category=${category}`;
+            const response = await fetch(endpoint);
+            
+            if (response.ok) {
+                data = await response.json();
+            } else {
+                // Fallback to original quote function
+                endpoint = '/.netlify/functions/quote';
+                const fallbackResponse = await fetch(endpoint);
+                if (!fallbackResponse.ok) throw new Error('All quote APIs failed');
+                data = await fallbackResponse.json();
+                data = data.text ? data : { text: data.content, author: data.author };
+            }
+        } else {
+            // Local development - use direct API
+            endpoint = 'https://api.quotable.io/random?tags=inspirational';
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error('API request failed');
+            const quoteData = await response.json();
+            data = { text: quoteData.content, author: quoteData.author };
+        }
         
         // Cache to localStorage
-        localStorage.setItem(CONFIG.storageKeys.lastQuote, JSON.stringify(quoteData));
+        localStorage.setItem(CONFIG.storageKeys.lastQuote, JSON.stringify(data));
         
         // Display the quote
-        elements.motivation.textContent = `"${quoteData.text}" — ${quoteData.author}`;
+        displayContent('quote', data);
     } catch (error) {
         console.warn('Failed to fetch quote from API, using cached/fallback', error);
         displayCachedQuote();
+    }
+}
+
+async function fetchFact() {
+    try {
+        const useNetlify = CONFIG.apiNinjas.useNetlifyFunction && 
+            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
+        
+        if (!useNetlify) {
+            throw new Error('Facts only available via Netlify Functions');
+        }
+        
+        const response = await fetch('/.netlify/functions/fact');
+        if (!response.ok) throw new Error('Fact API request failed');
+        
+        const data = await response.json();
+        
+        // Cache to localStorage
+        localStorage.setItem(CONFIG.storageKeys.lastFact, JSON.stringify(data));
+        
+        // Display the fact
+        displayContent('fact', data);
+    } catch (error) {
+        console.warn('Failed to fetch fact, using cached/fallback', error);
+        displayCachedFact();
+    }
+}
+
+async function fetchJoke() {
+    try {
+        const useNetlify = CONFIG.apiNinjas.useNetlifyFunction && 
+            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
+        
+        if (!useNetlify) {
+            throw new Error('Jokes only available via Netlify Functions');
+        }
+        
+        const response = await fetch('/.netlify/functions/joke');
+        if (!response.ok) throw new Error('Joke API request failed');
+        
+        const data = await response.json();
+        
+        // Cache to localStorage
+        localStorage.setItem(CONFIG.storageKeys.lastJoke, JSON.stringify(data));
+        
+        // Display the joke
+        displayContent('joke', data);
+    } catch (error) {
+        console.warn('Failed to fetch joke, using cached/fallback', error);
+        displayCachedJoke();
+    }
+}
+
+async function fetchWordOfDay() {
+    try {
+        const useNetlify = CONFIG.apiNinjas.useNetlifyFunction && 
+            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
+        
+        if (!useNetlify) {
+            throw new Error('Word of Day only available via Netlify Functions');
+        }
+        
+        const response = await fetch('/.netlify/functions/word-of-day');
+        if (!response.ok) throw new Error('Word API request failed');
+        
+        const data = await response.json();
+        
+        // Cache to localStorage
+        localStorage.setItem(CONFIG.storageKeys.wordOfDay, JSON.stringify(data));
+        
+        // Display the word
+        displayContent('word', data);
+    } catch (error) {
+        console.warn('Failed to fetch word, using cached/fallback', error);
+        displayCachedWord();
+    }
+}
+
+function displayContent(type, data) {
+    state.currentContentType = type;
+    localStorage.setItem(CONFIG.storageKeys.contentType, type);
+    
+    switch(type) {
+        case 'quote':
+            elements.motivation.innerHTML = `<i class="fas fa-quote-left quote-icon"></i> "${data.text}" — ${data.author}`;
+            break;
+        case 'fact':
+            elements.motivation.innerHTML = `<i class="fas fa-lightbulb quote-icon"></i> ${data.text}`;
+            break;
+        case 'joke':
+            elements.motivation.innerHTML = `<i class="fas fa-laugh quote-icon"></i> ${data.text}`;
+            break;
+        case 'word':
+            elements.motivation.innerHTML = `<i class="fas fa-book quote-icon"></i> <strong>${data.word}</strong>: ${data.definition}`;
+            break;
     }
 }
 
@@ -229,10 +351,40 @@ function displayCachedQuote() {
     const cached = localStorage.getItem(CONFIG.storageKeys.lastQuote);
     if (cached) {
         const quote = JSON.parse(cached);
-        elements.motivation.textContent = `"${quote.text}" — ${quote.author}`;
+        displayContent('quote', quote);
     } else {
         // Ultimate fallback to hardcoded array
         displayRandomQuote();
+    }
+}
+
+function displayCachedFact() {
+    const cached = localStorage.getItem(CONFIG.storageKeys.lastFact);
+    if (cached) {
+        const fact = JSON.parse(cached);
+        displayContent('fact', fact);
+    } else {
+        elements.motivation.innerHTML = '<i class="fas fa-lightbulb quote-icon"></i> Did you know? The human brain can process images in as little as 13 milliseconds.';
+    }
+}
+
+function displayCachedJoke() {
+    const cached = localStorage.getItem(CONFIG.storageKeys.lastJoke);
+    if (cached) {
+        const joke = JSON.parse(cached);
+        displayContent('joke', joke);
+    } else {
+        elements.motivation.innerHTML = '<i class="fas fa-laugh quote-icon"></i> Why did the programmer quit his job? Because he didn\'t get arrays! 😄';
+    }
+}
+
+function displayCachedWord() {
+    const cached = localStorage.getItem(CONFIG.storageKeys.wordOfDay);
+    if (cached) {
+        const word = JSON.parse(cached);
+        displayContent('word', word);
+    } else {
+        elements.motivation.innerHTML = '<i class="fas fa-book quote-icon"></i> <strong>serendipity</strong>: The occurrence of events by chance in a happy or beneficial way.';
     }
 }
 
@@ -254,15 +406,6 @@ function loadName() {
 
 // ===== Weather Functions =====
 async function updateWeather() {
-    // Check if API key is configured
-    if (!CONFIG.weather.apiKey) {
-        console.warn('Weather API key not configured');
-        if (elements.weatherCard) {
-            elements.weatherCard.style.display = 'none';
-        }
-        return;
-    }
-    
     // Check if we need to update (based on interval)
     const now = Date.now();
     const timeSinceUpdate = (now - state.lastWeatherUpdate) / 1000 / 60; // minutes
@@ -277,12 +420,34 @@ async function updateWeather() {
     }
     
     try {
-        // Get user's position
-        const position = await getCurrentPosition();
+        // Try to get user's position, fallback to IP-based location or default
+        let position;
+        try {
+            position = await getCurrentPosition();
+            console.log('✅ Geolocation success! Using your actual location:', position.latitude, position.longitude);
+        } catch (geoError) {
+            console.warn('⚠️ Geolocation failed, using fallback location:', geoError.message);
+            // Try IP-based geolocation as fallback
+            try {
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipData = await ipResponse.json();
+                position = {
+                    latitude: ipData.latitude,
+                    longitude: ipData.longitude
+                };
+                console.log('📍 Using IP-based location:', ipData.city, ipData.country_name);
+            } catch (ipError) {
+                // Use default location (Zurich, Switzerland) if all else fails
+                console.warn('🌍 IP geolocation failed, using default location (Zurich, Switzerland)');
+                position = {
+                    latitude: 47.3769,
+                    longitude: 8.5417
+                };
+            }
+        }
         
         // Determine if we should use Netlify Function or direct API
-        const useNetlifyFunction = CONFIG.weather.useNetlifyFunction && 
-            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
+        const useNetlifyFunction = CONFIG.weather.useNetlifyFunction;
         
         let response;
         if (useNetlifyFunction) {
@@ -293,7 +458,11 @@ async function updateWeather() {
         } else {
             // Use direct API (for local development)
             if (!CONFIG.weather.apiKey) {
-                throw new Error('Weather API key not configured for local development');
+                console.warn('Weather API key not configured for local development');
+                if (elements.weatherCard) {
+                    elements.weatherCard.style.display = 'none';
+                }
+                return;
             }
             response = await fetch(
                 `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&units=${CONFIG.weather.units}&appid=${CONFIG.weather.apiKey}`
@@ -313,12 +482,21 @@ async function updateWeather() {
         displayWeather(data);
     } catch (error) {
         console.error('Failed to fetch weather:', error);
+        console.error('Error details:', {
+            message: error.message,
+            useNetlifyFunction: CONFIG.weather.useNetlifyFunction,
+            hostname: window.location.hostname
+        });
         // Try to load cached data
         const cached = localStorage.getItem(CONFIG.storageKeys.lastWeather);
         if (cached) {
+            console.log('Loading cached weather data');
             displayWeather(JSON.parse(cached));
-        } else if (elements.weatherCard) {
-            elements.weatherCard.style.display = 'none';
+        } else {
+            console.log('No cached weather data available, hiding weather card');
+            if (elements.weatherCard) {
+                elements.weatherCard.style.display = 'none';
+            }
         }
     }
 }
@@ -408,8 +586,8 @@ function updateParallax() {
 
 // ===== Image Management =====
 function getAllImages() {
-    // Combine preset images (paths) and uploaded images (base64)
-    return [...state.selectedImages, ...state.images];
+    // Return only selected preset images
+    return state.selectedImages;
 }
 
 function loadBackgroundImage() {
@@ -455,29 +633,6 @@ function checkStorageSize() {
     return total / 1024 / 1024; // Return size in MB
 }
 
-function updateStorageWarning() {
-    if (!elements.storageWarning) return;
-    
-    const sizeMB = checkStorageSize();
-    if (sizeMB > 4) { // Warning at 4MB (80% of 5MB limit)
-        elements.storageWarning.style.display = 'block';
-        elements.storageWarning.textContent = `⚠️ Storage: ${sizeMB.toFixed(2)}MB / ~5MB. Consider using preset images or deleting uploads.`;
-    } else {
-        elements.storageWarning.style.display = 'none';
-    }
-}
-
-function addImage(dataUrl) {
-    state.images.push(dataUrl);
-    saveImages();
-    renderGallery();
-    updateStorageWarning();
-    
-    if (getAllImages().length === 1) {
-        loadBackgroundImage();
-    }
-}
-
 function selectPresetImage(path) {
     if (!state.selectedImages.includes(path)) {
         state.selectedImages.push(path);
@@ -506,83 +661,13 @@ function deselectPresetImage(path) {
     }
 }
 
-function deleteImage(index) {
-    state.images.splice(index, 1);
-    
-    const allImages = getAllImages();
-    if (state.currentImageIndex >= allImages.length) {
-        state.currentImageIndex = Math.max(0, allImages.length - 1);
-    }
-    
-    saveImages();
-    renderGallery();
-    loadBackgroundImage();
-    updateStorageWarning();
-}
-
-function saveImages() {
-    localStorage.setItem(CONFIG.storageKeys.images, JSON.stringify(state.images));
-}
-
 function saveSelectedImages() {
     localStorage.setItem(CONFIG.storageKeys.selectedImages, JSON.stringify(state.selectedImages));
 }
 
 function renderGallery() {
-    // Check if we have tab-based gallery or legacy single gallery
-    if (elements.uploadedGallery && elements.presetGallery) {
-        renderUploadedGallery();
-        renderPresetGallery();
-    } else {
-        renderLegacyGallery();
-    }
-    updateStorageWarning();
-}
-
-function renderUploadedGallery() {
-    elements.uploadedGallery.innerHTML = '';
-    
-    if (state.images.length === 0) {
-        elements.uploadedGallery.innerHTML = '<p class="empty-message">No uploaded images yet. Upload your landscape photos to get started!</p>';
-        return;
-    }
-    
-    const allImages = getAllImages();
-    
-    state.images.forEach((image, index) => {
-        const actualIndex = state.selectedImages.length + index;
-        const item = document.createElement('div');
-        item.className = 'gallery-item';
-        if (actualIndex === state.currentImageIndex) {
-            item.classList.add('active');
-        }
-        
-        item.innerHTML = `
-            <img src="${image}" alt="Uploaded ${index + 1}" loading="lazy">
-            <button class="delete-btn" data-index="${index}" title="Delete">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
-        
-        item.addEventListener('click', (e) => {
-            if (!e.target.closest('.delete-btn')) {
-                state.currentImageIndex = actualIndex;
-                localStorage.setItem(CONFIG.storageKeys.currentImage, actualIndex);
-                loadBackgroundImage();
-                renderGallery();
-            }
-        });
-        
-        const deleteBtn = item.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm('Delete this image?')) {
-                deleteImage(index);
-            }
-        });
-        
-        elements.uploadedGallery.appendChild(item);
-    });
+    if (!elements.presetGallery) return;
+    renderPresetGallery();
 }
 
 function renderPresetGallery() {
@@ -633,84 +718,6 @@ function renderPresetGallery() {
         
         elements.presetGallery.appendChild(item);
     });
-}
-
-function renderLegacyGallery() {
-    elements.galleryGrid.innerHTML = '';
-    
-    const allImages = getAllImages();
-    
-    if (allImages.length === 0) {
-        elements.galleryGrid.innerHTML = '<p style="grid-column: 1/-1; opacity: 0.7; padding: 2rem;">No images selected yet. Upload your landscape photos to get started!</p>';
-        return;
-    }
-    
-    allImages.forEach((image, index) => {
-        const item = document.createElement('div');
-        item.className = 'gallery-item';
-        if (index === state.currentImageIndex) {
-            item.classList.add('active');
-        }
-        
-        const isPreset = index < state.selectedImages.length;
-        
-        item.innerHTML = `
-            <img src="${image}" alt="Background ${index + 1}" loading="lazy">
-            <button class="delete-btn" data-index="${index}" data-type="${isPreset ? 'preset' : 'uploaded'}" title="Remove">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
-        
-        item.addEventListener('click', (e) => {
-            if (!e.target.closest('.delete-btn')) {
-                state.currentImageIndex = index;
-                localStorage.setItem(CONFIG.storageKeys.currentImage, index);
-                loadBackgroundImage();
-                renderGallery();
-            }
-        });
-        
-        elements.galleryGrid.appendChild(item);
-    });
-    
-    // Attach delete handlers
-    document.querySelectorAll('.gallery-item .delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const index = parseInt(btn.getAttribute('data-index'));
-            const type = btn.getAttribute('data-type');
-            
-            if (confirm('Remove this image?')) {
-                if (type === 'preset') {
-                    const path = state.selectedImages[index];
-                    deselectPresetImage(path);
-                } else {
-                    const uploadedIndex = index - state.selectedImages.length;
-                    deleteImage(uploadedIndex);
-                }
-            }
-        });
-    });
-}
-
-// ===== Image Upload Handler =====
-function handleImageUpload(e) {
-    const files = Array.from(e.target.files);
-    
-    files.forEach(file => {
-        if (!file.type.startsWith('image/')) return;
-        
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            addImage(event.target.result);
-        };
-        reader.onerror = () => {
-            alert('Failed to load image. Please try another file.');
-        };
-        reader.readAsDataURL(file);
-    });
-    
-    e.target.value = ''; // Reset input
 }
 
 // ===== Calendar Integration =====
@@ -795,13 +802,85 @@ function closeOverlay(overlayId) {
     }
 }
 
+// ===== Content Management =====
+function refreshContent(contentType) {
+    state.currentContentType = contentType;
+    localStorage.setItem(CONFIG.storageKeys.contentType, contentType);
+    
+    switch(contentType) {
+        case 'quote':
+            fetchQuote();
+            break;
+        case 'fact':
+            fetchFact();
+            break;
+        case 'joke':
+            fetchJoke();
+            break;
+        case 'word':
+            fetchWordOfDay();
+            break;
+    }
+}
+
+function loadStoredContent() {
+    // Load last viewed content type
+    const contentType = state.currentContentType;
+    
+    // Set active button
+    document.querySelectorAll('.content-btn').forEach(btn => {
+        if (btn.getAttribute('data-content') === contentType) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Display cached content or fetch new
+    switch(contentType) {
+        case 'quote':
+            displayCachedQuote();
+            break;
+        case 'fact':
+            displayCachedFact();
+            break;
+        case 'joke':
+            displayCachedJoke();
+            break;
+        case 'word':
+            displayCachedWord();
+            break;
+        default:
+            fetchQuote();
+    }
+}
+
 // ===== Event Listeners =====
 function initEventListeners() {
     // Navigation buttons
     elements.imagesBtn.addEventListener('click', () => openOverlay('images-overlay'));
     elements.calendarBtn.addEventListener('click', () => openOverlay('calendar-overlay'));
     elements.settingsBtn.addEventListener('click', () => openOverlay('settings-overlay'));
-    elements.refreshQuoteBtn.addEventListener('click', fetchQuote); // Use fetchQuote instead of displayRandomQuote
+    
+    // Content selector buttons
+    document.querySelectorAll('.content-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const contentType = btn.getAttribute('data-content');
+            
+            // Update active button
+            document.querySelectorAll('.content-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Fetch and display new content
+            refreshContent(contentType);
+        });
+    });
+    
+    // Refresh content button
+    const refreshBtn = document.getElementById('refresh-content-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => refreshContent(state.currentContentType));
+    }
     
     // Close buttons
     document.querySelectorAll('.close-btn').forEach(btn => {
@@ -829,10 +908,7 @@ function initEventListeners() {
         }
     });
     
-    // Image upload
-    elements.imageUpload.addEventListener('change', handleImageUpload);
-    
-    // Gallery tabs
+    // Gallery tabs removed - no longer needed
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tabName = btn.getAttribute('data-tab');
@@ -887,7 +963,7 @@ function init() {
     // Initialize features
     updateTime();
     updateGreeting();
-    fetchQuote(); // Use API for quotes
+    loadStoredContent(); // Load appropriate content type
     loadBackgroundImage();
     renderGallery();
     initParallax();
@@ -931,12 +1007,14 @@ if (document.readyState === 'loading') {
 window.WelcomeDashboard = {
     state,
     CONFIG,
-    addImage,
-    deleteImage,
     selectPresetImage,
     deselectPresetImage,
     cycleBackground,
     fetchQuote,
+    fetchFact,
+    fetchJoke,
+    fetchWordOfDay,
+    refreshContent,
     displayRandomQuote,
     updateWeather,
     checkStorageSize

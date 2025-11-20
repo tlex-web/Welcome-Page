@@ -94,9 +94,16 @@ body {
 }
 
 .nav-left,
+.nav-center,
 .nav-right {
     display: flex;
     gap: 1rem;
+    align-items: center;
+}
+
+.nav-center {
+    flex: 1;
+    justify-content: center;
 }
 
 .nav-btn {
@@ -123,6 +130,46 @@ body {
 
 .nav-btn:active {
     transform: translateY(0);
+}
+
+/* ===== Content Selector ===== */
+.content-selector {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.content-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.content-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.content-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.content-btn:active {
+    transform: scale(0.95);
 }
 
 /* ===== Main Content ===== */
@@ -293,7 +340,7 @@ body {
 
 /* ===== Quote Card ===== */
 .quote-card {
-    max-width: 800px;
+    max-width: 1200px;
     animation-delay: 0.3s;
 }
 
@@ -303,12 +350,12 @@ body {
 }
 
 .quote-icon {
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    font-size: 2rem;
-    opacity: 0.3;
+    font-size: 1.8rem;
+    opacity: 0.5;
     color: var(--accent-color);
+    margin-right: 0.8rem;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .quote-text {
@@ -318,6 +365,19 @@ body {
     text-align: center;
     opacity: 0.95;
     padding: 0 2rem;
+    display: inline;
+}
+
+#motivation {
+    text-align: center;
+    line-height: 1.8;
+}
+
+#motivation strong {
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 1.4em;
+    text-transform: capitalize;
 }
 
 /* ===== Overlay System ===== */
