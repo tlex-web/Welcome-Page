@@ -19,16 +19,27 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 - **Current Date** - Full date display with day of the week
 
 ### 💡 Motivation
-- **Inspirational Quotes** - Rotating collection of 20+ motivational quotes
+- **Live API Integration** - Fetches inspirational quotes from Quotable API
+- **Smart Caching** - Stores quotes locally for offline use
+- **Fallback System** - Built-in collection of 20+ quotes if API unavailable
 - **Refresh Button** - Get a new quote anytime with one click
-- **Beautiful Typography** - Elegant quote presentation with glass morphism
+- **Beautiful Typography** - Elegant quote presentation with glassmorphism
+
+### 🌤️ Weather Widget
+- **Real-time Weather** - Displays current temperature and conditions
+- **Auto-location** - Uses geolocation to detect your location
+- **Smart Caching** - Updates every 30 minutes to respect API limits
+- **Weather Icons** - Beautiful animated weather icons from OpenWeatherMap
+- **Configurable Units** - Choose between Celsius and Fahrenheit
 
 ### 🖼️ Image Management
-- **Upload Your Own Images** - Add multiple landscape photos
-- **Gallery View** - Visual thumbnail gallery of all your images
-- **Delete & Manage** - Easy image management with deletion
+- **Two Image Sources**:
+  - **Upload Images** - Add your own photos (stored in browser localStorage)
+  - **Preset Images** - Select from images in the `img/` folder (lightweight, uses paths)
+- **Tabbed Gallery** - Clean interface to manage both uploaded and preset images
+- **Storage Monitor** - Real-time warning when approaching localStorage limits
+- **Smart Selection** - Click to set as background, select/deselect preset images
 - **Auto-Cycling** - Automatically changes background at set intervals
-- **localStorage** - All images stored locally in your browser
 - **3D Parallax Effect** - Each image gets the beautiful depth effect
 
 ### 📅 Calendar Integration (Ready for Setup)
@@ -50,8 +61,43 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 ### Quick Start
 1. Clone or download this repository
 2. Open `index.html` in your browser
-3. Upload your landscape images via the gallery button
-4. Customize your name and settings
+3. **Optional**: Configure API keys (see Configuration below)
+4. Upload your landscape images or add preset images to `img/` folder
+5. Customize your name and settings
+
+### Configuration
+
+#### Weather Widget Setup (Optional)
+To enable the weather widget:
+
+1. Get a free API key from [OpenWeatherMap](https://openweathermap.org/api)
+2. Open `js/app.js`
+3. Update the `CONFIG.weather.apiKey` with your key:
+   ```javascript
+   weather: {
+       apiKey: 'your_api_key_here',
+       units: 'metric', // or 'imperial' for Fahrenheit
+       updateInterval: 30 // minutes
+   }
+   ```
+4. Refresh the page - the weather widget will appear automatically
+
+#### Preset Images Setup
+To use local images from the `img/` folder instead of localStorage:
+
+1. Add your images to the `img/` folder
+2. Open `js/app.js`
+3. Update the `CONFIG.presetImages` array:
+   ```javascript
+   presetImages: [
+       'img/background1.jpg',
+       'img/background2.jpg',
+       'img/background3.jpg'
+   ]
+   ```
+4. In the gallery, switch to the "Preset" tab to select images
+
+**Benefits**: No localStorage limits, faster loading, better for large image collections!
 
 ### Netlify Deployment
 This site is optimized for Netlify deployment:
@@ -72,7 +118,12 @@ This site is optimized for Netlify deployment:
    - Build settings: Leave default (static site)
    - Click "Deploy site"
 
-3. **Custom Domain (Optional)**
+3. **Environment Variables (for API Keys)**
+   - In Netlify dashboard, go to Site settings → Environment variables
+   - Add `WEATHER_API_KEY` with your OpenWeatherMap key
+   - Use Netlify Functions to proxy API calls securely (see instructions file)
+
+4. **Custom Domain (Optional)**
    - In Netlify dashboard, go to Domain settings
    - Add your custom domain
    - Follow DNS configuration instructions
@@ -84,7 +135,9 @@ For best results with the 3D parallax effect:
 - **High resolution** (1920x1080 or higher)
 - **Scenic photos** - Mountains, beaches, forests, cityscapes
 - **Good depth** - Images with foreground/background elements work best
-- **File size** - Keep under 5MB per image for performance
+- **File size considerations**:
+  - **Uploaded images**: Stored in localStorage (~5MB browser limit total)
+  - **Preset images**: Use `img/` folder - no size limits!
 
 ## 🔐 Calendar Setup (Optional)
 

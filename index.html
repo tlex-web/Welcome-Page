@@ -48,6 +48,16 @@
             <div class="date-display" id="date"></div>
         </div>
 
+        <!-- Weather Widget -->
+        <div class="glass-card weather-card" id="weather-card" style="display: none;">
+            <div class="weather-icon" id="weather-icon"></div>
+            <div class="weather-info">
+                <div class="weather-temp" id="weather-temp">--°</div>
+                <div class="weather-condition" id="weather-condition">Loading...</div>
+                <div class="weather-location" id="weather-location">--</div>
+            </div>
+        </div>
+
         <!-- Greeting Widget -->
         <div class="glass-card greeting-card">
             <h1 class="greeting" id="greeting">Good Morning</h1>
@@ -76,15 +86,40 @@
                 </button>
             </div>
             <div class="overlay-body">
+                <div class="storage-warning" id="storage-warning" style="display: none;"></div>
+                
                 <div class="upload-section">
                     <label for="image-upload" class="upload-label">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <span>Upload Images</span>
                         <input type="file" id="image-upload" accept="image/*" multiple hidden>
                     </label>
-                    <p class="upload-hint">Select multiple landscape images for best results</p>
+                    <p class="upload-hint">Select multiple landscape images for best results (stored in browser localStorage)</p>
                 </div>
-                <div class="gallery-grid" id="gallery-grid">
+                
+                <div class="gallery-tabs" id="gallery-tabs">
+                    <button class="tab-btn active" data-tab="uploaded">
+                        <i class="fas fa-upload"></i> Uploaded
+                    </button>
+                    <button class="tab-btn" data-tab="preset">
+                        <i class="fas fa-folder"></i> Preset
+                    </button>
+                </div>
+                
+                <div class="tab-content active" data-content="uploaded">
+                    <div class="gallery-grid" id="uploaded-gallery">
+                        <!-- Uploaded images will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <div class="tab-content" data-content="preset">
+                    <div class="gallery-grid" id="preset-gallery">
+                        <!-- Preset images will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Legacy single gallery (fallback) -->
+                <div class="gallery-grid" id="gallery-grid" style="display: none;">
                     <!-- Images will be dynamically added here -->
                 </div>
             </div>

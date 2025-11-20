@@ -2,6 +2,50 @@
 
 All notable changes to the Welcome Dashboard project.
 
+## [2.1.0] - 2025-11-20
+
+### 🌤️ Weather Widget
+- **NEW:** Real-time weather display with OpenWeatherMap API integration
+- **NEW:** Automatic geolocation detection
+- **NEW:** Temperature, condition, and location display
+- **NEW:** Animated weather icons
+- **NEW:** Smart caching (updates every 30 minutes)
+- **NEW:** Configurable temperature units (Celsius/Fahrenheit)
+- **NEW:** Graceful fallback when API unavailable
+
+### 💬 Quote API Integration
+- **NEW:** Live inspirational quotes from Quotable API
+- **NEW:** Automatic caching to localStorage for offline use
+- **NEW:** Three-tier fallback system (API → Cached → Hardcoded)
+- **NEW:** Better variety with thousands of quotes available
+
+### 🖼️ Enhanced Image Management
+- **NEW:** Dual image sources: Uploaded + Preset images
+- **NEW:** Tabbed gallery interface (Uploaded/Preset tabs)
+- **NEW:** Preset images use `img/` folder paths (no localStorage limits!)
+- **NEW:** Select/deselect preset images with visual indicators
+- **NEW:** Real-time storage monitor with warning at 80% capacity
+- **NEW:** Storage size calculator function
+- **NEW:** Lazy loading for gallery images
+- **NEW:** Better handling of mixed image sources
+
+### 🔧 Technical Improvements
+- **IMPROVED:** localStorage management with namespaced keys
+- **IMPROVED:** API error handling and fallback mechanisms
+- **IMPROVED:** Gallery rendering performance with lazy loading
+- **IMPROVED:** State management for multiple image sources
+- **IMPROVED:** CSS organization with new utility classes
+- **FIXED:** Gallery tab switching functionality
+- **FIXED:** Background cycling with mixed image sources
+- **FIXED:** Image index tracking across preset and uploaded images
+
+### 📚 Documentation
+- **NEW:** Comprehensive Copilot instructions with API integration guides
+- **NEW:** Weather API setup instructions
+- **NEW:** Preset image configuration guide
+- **NEW:** Storage management best practices
+- **UPDATED:** README with new features and configuration options
+
 ## [2.0.0] - 2025-11-20
 
 ### 🎨 Complete Redesign

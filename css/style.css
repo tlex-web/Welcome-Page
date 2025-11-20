@@ -191,6 +191,54 @@ body {
     font-weight: 400;
 }
 
+/* ===== Weather Card ===== */
+.weather-card {
+    animation-delay: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+}
+
+.weather-icon {
+    font-size: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.weather-icon img {
+    width: 80px;
+    height: 80px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.weather-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.weather-temp {
+    font-size: 2.5rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #fff, var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.weather-condition {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    text-transform: capitalize;
+}
+
+.weather-location {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
 /* ===== Greeting Card ===== */
 .greeting-card {
     animation-delay: 0.2s;
@@ -393,6 +441,65 @@ body {
     opacity: 0.7;
 }
 
+/* ===== Storage Warning ===== */
+.storage-warning {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #ffc107;
+    text-align: center;
+}
+
+/* ===== Gallery Tabs ===== */
+.gallery-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1rem;
+    border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.empty-message {
+    grid-column: 1/-1;
+    opacity: 0.7;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -421,7 +528,8 @@ body {
     object-fit: cover;
 }
 
-.gallery-item .delete-btn {
+.gallery-item .delete-btn,
+.gallery-item .select-btn {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -439,12 +547,26 @@ body {
     justify-content: center;
 }
 
-.gallery-item:hover .delete-btn {
+.gallery-item .select-btn {
+    background: rgba(102, 126, 234, 0.9);
+}
+
+.gallery-item .select-btn.selected {
+    background: rgba(76, 175, 80, 0.9);
+    opacity: 1;
+}
+
+.gallery-item:hover .delete-btn,
+.gallery-item:hover .select-btn {
     opacity: 1;
 }
 
 .gallery-item.active {
     border: 3px solid var(--accent-color);
+}
+
+.gallery-item.preset-item.selected {
+    border: 2px solid rgba(76, 175, 80, 0.5);
 }
 
 /* ===== Calendar Section ===== */

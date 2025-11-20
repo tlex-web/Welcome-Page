@@ -9,7 +9,11 @@ const CONFIG = {
         name: 'welcomePage_userName',
         images: 'welcomePage_images',
         settings: 'welcomePage_settings',
-        currentImage: 'welcomePage_currentImage'
+        currentImage: 'welcomePage_currentImage',
+        lastQuote: 'welcomePage_lastQuote',
+        lastWeather: 'welcomePage_lastWeather',
+        weatherTimestamp: 'welcomePage_weatherTimestamp',
+        selectedImages: 'welcomePage_selectedImages'
     },
     defaultSettings: {
         parallaxEnabled: true,
@@ -17,6 +21,15 @@ const CONFIG = {
         timeFormat24: true,
         showSeconds: true
     },
+    weather: {
+        apiKey: '', // Get from openweathermap.org/api (free tier)
+        units: 'metric', // or 'imperial'
+        updateInterval: 30 // minutes
+    },
+    presetImages: [
+        // Add paths to images in img/ folder here
+        // Example: 'img/background1.jpg', 'img/background2.jpg'
+    ],
     calendar: {
         // Microsoft Graph API (Outlook/Teams)
         microsoft: {
@@ -37,10 +50,12 @@ const CONFIG = {
 const state = {
     userName: localStorage.getItem(CONFIG.storageKeys.name) || 'Tim',
     images: JSON.parse(localStorage.getItem(CONFIG.storageKeys.images)) || [],
+    selectedImages: JSON.parse(localStorage.getItem(CONFIG.storageKeys.selectedImages)) || [],
     settings: JSON.parse(localStorage.getItem(CONFIG.storageKeys.settings)) || CONFIG.defaultSettings,
     currentImageIndex: parseInt(localStorage.getItem(CONFIG.storageKeys.currentImage)) || 0,
     mousePosition: { x: 0, y: 0 },
-    calendarConnected: false
+    calendarConnected: false,
+    lastWeatherUpdate: parseInt(localStorage.getItem(CONFIG.storageKeys.weatherTimestamp)) || 0
 };
 
 // ===== Motivational Quotes =====
@@ -77,6 +92,13 @@ const elements = {
     parallaxLayers: document.querySelectorAll('.parallax-layer'),
     loadingScreen: document.getElementById('loading-screen'),
     
+    // Weather widget
+    weatherCard: document.getElementById('weather-card'),
+    weatherTemp: document.getElementById('weather-temp'),
+    weatherCondition: document.getElementById('weather-condition'),
+    weatherIcon: document.getElementById('weather-icon'),
+    weatherLocation: document.getElementById('weather-location'),
+    
     // Navigation buttons
     imagesBtn: document.getElementById('images-btn'),
     calendarBtn: document.getElementById('calendar-btn'),
@@ -91,6 +113,12 @@ const elements = {
     // Image management
     imageUpload: document.getElementById('image-upload'),
     galleryGrid: document.getElementById('gallery-grid'),
+    galleryTabs: document.getElementById('gallery-tabs'),
+    uploadedTab: document.getElementById('uploaded-tab'),
+    presetTab: document.getElementById('preset-tab'),
+    uploadedGallery: document.getElementById('uploaded-gallery'),
+    presetGallery: document.getElementById('preset-gallery'),
+    storageWarning: document.getElementById('storage-warning'),
     
     // Calendar
     calendarAuth: document.getElementById('calendar-auth'),
@@ -152,6 +180,38 @@ function updateGreeting() {
 }
 
 // ===== Motivational Quote =====
+async function fetchQuote() {
+    try {
+        // Try to fetch from Quotable API
+        const response = await fetch('https://api.quotable.io/random?tags=inspirational');
+        if (!response.ok) throw new Error('API request failed');
+        
+        const quote = await response.json();
+        const quoteData = { text: quote.content, author: quote.author };
+        
+        // Cache to localStorage
+        localStorage.setItem(CONFIG.storageKeys.lastQuote, JSON.stringify(quoteData));
+        
+        // Display the quote
+        elements.motivation.textContent = `"${quoteData.text}" — ${quoteData.author}`;
+    } catch (error) {
+        console.warn('Failed to fetch quote from API, using cached/fallback', error);
+        displayCachedQuote();
+    }
+}
+
+function displayCachedQuote() {
+    // Try cached quote first
+    const cached = localStorage.getItem(CONFIG.storageKeys.lastQuote);
+    if (cached) {
+        const quote = JSON.parse(cached);
+        elements.motivation.textContent = `"${quote.text}" — ${quote.author}`;
+    } else {
+        // Ultimate fallback to hardcoded array
+        displayRandomQuote();
+    }
+}
+
 function displayRandomQuote() {
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
     const quote = motivationalQuotes[randomIndex];
@@ -166,6 +226,96 @@ function saveName() {
 
 function loadName() {
     elements.name.textContent = state.userName;
+}
+
+// ===== Weather Functions =====
+async function updateWeather() {
+    // Check if API key is configured
+    if (!CONFIG.weather.apiKey) {
+        console.warn('Weather API key not configured');
+        if (elements.weatherCard) {
+            elements.weatherCard.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Check if we need to update (based on interval)
+    const now = Date.now();
+    const timeSinceUpdate = (now - state.lastWeatherUpdate) / 1000 / 60; // minutes
+    
+    if (timeSinceUpdate < CONFIG.weather.updateInterval) {
+        // Load cached weather
+        const cached = localStorage.getItem(CONFIG.storageKeys.lastWeather);
+        if (cached) {
+            displayWeather(JSON.parse(cached));
+            return;
+        }
+    }
+    
+    try {
+        // Get user's position
+        const position = await getCurrentPosition();
+        
+        // Fetch weather data
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&units=${CONFIG.weather.units}&appid=${CONFIG.weather.apiKey}`
+        );
+        
+        if (!response.ok) throw new Error('Weather API request failed');
+        
+        const data = await response.json();
+        
+        // Cache the data
+        localStorage.setItem(CONFIG.storageKeys.lastWeather, JSON.stringify(data));
+        localStorage.setItem(CONFIG.storageKeys.weatherTimestamp, now.toString());
+        state.lastWeatherUpdate = now;
+        
+        // Display weather
+        displayWeather(data);
+    } catch (error) {
+        console.error('Failed to fetch weather:', error);
+        // Try to load cached data
+        const cached = localStorage.getItem(CONFIG.storageKeys.lastWeather);
+        if (cached) {
+            displayWeather(JSON.parse(cached));
+        } else if (elements.weatherCard) {
+            elements.weatherCard.style.display = 'none';
+        }
+    }
+}
+
+function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            }),
+            (error) => reject(error),
+            { timeout: 10000 }
+        );
+    });
+}
+
+function displayWeather(data) {
+    if (!elements.weatherCard) return;
+    
+    const temp = Math.round(data.main.temp);
+    const condition = data.weather[0].description;
+    const icon = data.weather[0].icon;
+    const location = data.name;
+    
+    elements.weatherTemp.textContent = `${temp}°${CONFIG.weather.units === 'metric' ? 'C' : 'F'}`;
+    elements.weatherCondition.textContent = condition.charAt(0).toUpperCase() + condition.slice(1);
+    elements.weatherIcon.innerHTML = `<img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="${condition}">`;
+    elements.weatherLocation.textContent = location;
+    
+    elements.weatherCard.style.display = 'block';
 }
 
 // ===== 3D Parallax Effect =====
@@ -218,15 +368,22 @@ function updateParallax() {
 }
 
 // ===== Image Management =====
+function getAllImages() {
+    // Combine preset images (paths) and uploaded images (base64)
+    return [...state.selectedImages, ...state.images];
+}
+
 function loadBackgroundImage() {
-    if (state.images.length === 0) {
+    const allImages = getAllImages();
+    
+    if (allImages.length === 0) {
         // Load default gradient if no images
         setDefaultBackground();
         return;
     }
     
-    const currentImage = state.images[state.currentImageIndex];
-    elements.parallaxLayers.forEach((layer, index) => {
+    const currentImage = allImages[state.currentImageIndex];
+    elements.parallaxLayers.forEach((layer) => {
         layer.style.backgroundImage = `url(${currentImage})`;
         layer.style.backgroundSize = 'cover';
         layer.style.backgroundPosition = 'center';
@@ -241,27 +398,71 @@ function setDefaultBackground() {
 }
 
 function cycleBackground() {
-    if (state.images.length === 0) return;
+    const allImages = getAllImages();
+    if (allImages.length === 0) return;
     
-    state.currentImageIndex = (state.currentImageIndex + 1) % state.images.length;
+    state.currentImageIndex = (state.currentImageIndex + 1) % allImages.length;
     localStorage.setItem(CONFIG.storageKeys.currentImage, state.currentImageIndex);
     loadBackgroundImage();
 }
 
-function addImage(dataUrl) {
-    // Estimate total size after adding new image
-    const SIZE_LIMIT = 5000000; // 5MB
-    const currentSize = JSON.stringify(state.images).length;
-    const newSize = currentSize + dataUrl.length;
-    if (newSize > SIZE_LIMIT) {
-        alert('Storage limit reached. Please delete some images before adding new ones.');
-        return;
+function checkStorageSize() {
+    let total = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            total += (localStorage[key].length + key.length) * 2; // UTF-16 encoding
+        }
     }
+    return total / 1024 / 1024; // Return size in MB
+}
+
+function updateStorageWarning() {
+    if (!elements.storageWarning) return;
+    
+    const sizeMB = checkStorageSize();
+    if (sizeMB > 4) { // Warning at 4MB (80% of 5MB limit)
+        elements.storageWarning.style.display = 'block';
+        elements.storageWarning.textContent = `⚠️ Storage: ${sizeMB.toFixed(2)}MB / ~5MB. Consider using preset images or deleting uploads.`;
+    } else {
+        elements.storageWarning.style.display = 'none';
+    }
+}
+
+function addImage(dataUrl) {
     state.images.push(dataUrl);
     saveImages();
     renderGallery();
+    updateStorageWarning();
     
-    if (state.images.length === 1) {
+    if (getAllImages().length === 1) {
+        loadBackgroundImage();
+    }
+}
+
+function selectPresetImage(path) {
+    if (!state.selectedImages.includes(path)) {
+        state.selectedImages.push(path);
+        saveSelectedImages();
+        renderGallery();
+        
+        if (getAllImages().length === 1) {
+            loadBackgroundImage();
+        }
+    }
+}
+
+function deselectPresetImage(path) {
+    const index = state.selectedImages.indexOf(path);
+    if (index > -1) {
+        state.selectedImages.splice(index, 1);
+        
+        const allImages = getAllImages();
+        if (state.currentImageIndex >= allImages.length) {
+            state.currentImageIndex = Math.max(0, allImages.length - 1);
+        }
+        
+        saveSelectedImages();
+        renderGallery();
         loadBackgroundImage();
     }
 }
@@ -269,37 +470,154 @@ function addImage(dataUrl) {
 function deleteImage(index) {
     state.images.splice(index, 1);
     
-    if (state.currentImageIndex >= state.images.length) {
-        state.currentImageIndex = Math.max(0, state.images.length - 1);
+    const allImages = getAllImages();
+    if (state.currentImageIndex >= allImages.length) {
+        state.currentImageIndex = Math.max(0, allImages.length - 1);
     }
     
     saveImages();
     renderGallery();
     loadBackgroundImage();
+    updateStorageWarning();
 }
 
-        elements.galleryGrid.innerHTML = '<p class="gallery-empty-state">No images uploaded yet. Upload your landscape photos to get started!</p>';
+function saveImages() {
     localStorage.setItem(CONFIG.storageKeys.images, JSON.stringify(state.images));
+}
 
+function saveSelectedImages() {
+    localStorage.setItem(CONFIG.storageKeys.selectedImages, JSON.stringify(state.selectedImages));
+}
 
 function renderGallery() {
-    elements.galleryGrid.innerHTML = '';
+    // Check if we have tab-based gallery or legacy single gallery
+    if (elements.uploadedGallery && elements.presetGallery) {
+        renderUploadedGallery();
+        renderPresetGallery();
+    } else {
+        renderLegacyGallery();
+    }
+    updateStorageWarning();
+}
+
+function renderUploadedGallery() {
+    elements.uploadedGallery.innerHTML = '';
     
     if (state.images.length === 0) {
-        elements.galleryGrid.innerHTML = '<p style="grid-column: 1/-1; opacity: 0.7; padding: 2rem;">No images uploaded yet. Upload your landscape photos to get started!</p>';
+        elements.uploadedGallery.innerHTML = '<p class="empty-message">No uploaded images yet. Upload your landscape photos to get started!</p>';
         return;
     }
     
+    const allImages = getAllImages();
+    
     state.images.forEach((image, index) => {
+        const actualIndex = state.selectedImages.length + index;
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        if (actualIndex === state.currentImageIndex) {
+            item.classList.add('active');
+        }
+        
+        item.innerHTML = `
+            <img src="${image}" alt="Uploaded ${index + 1}" loading="lazy">
+            <button class="delete-btn" data-index="${index}" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        
+        item.addEventListener('click', (e) => {
+            if (!e.target.closest('.delete-btn')) {
+                state.currentImageIndex = actualIndex;
+                localStorage.setItem(CONFIG.storageKeys.currentImage, actualIndex);
+                loadBackgroundImage();
+                renderGallery();
+            }
+        });
+        
+        const deleteBtn = item.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Delete this image?')) {
+                deleteImage(index);
+            }
+        });
+        
+        elements.uploadedGallery.appendChild(item);
+    });
+}
+
+function renderPresetGallery() {
+    elements.presetGallery.innerHTML = '';
+    
+    if (CONFIG.presetImages.length === 0) {
+        elements.presetGallery.innerHTML = '<p class="empty-message">No preset images configured. Add image paths to CONFIG.presetImages in js/app.js</p>';
+        return;
+    }
+    
+    CONFIG.presetImages.forEach((path, index) => {
+        const isSelected = state.selectedImages.includes(path);
+        const actualIndex = state.selectedImages.indexOf(path);
+        const item = document.createElement('div');
+        item.className = 'gallery-item preset-item';
+        if (isSelected && actualIndex === state.currentImageIndex) {
+            item.classList.add('active');
+        }
+        if (isSelected) {
+            item.classList.add('selected');
+        }
+        
+        item.innerHTML = `
+            <img src="${path}" alt="Preset ${index + 1}" loading="lazy">
+            <button class="select-btn ${isSelected ? 'selected' : ''}" data-path="${path}" title="${isSelected ? 'Deselect' : 'Select'}">
+                <i class="fas fa-${isSelected ? 'check' : 'plus'}"></i>
+            </button>
+        `;
+        
+        const selectBtn = item.querySelector('.select-btn');
+        selectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (isSelected) {
+                deselectPresetImage(path);
+            } else {
+                selectPresetImage(path);
+            }
+        });
+        
+        if (isSelected) {
+            item.addEventListener('click', () => {
+                state.currentImageIndex = actualIndex;
+                localStorage.setItem(CONFIG.storageKeys.currentImage, actualIndex);
+                loadBackgroundImage();
+                renderGallery();
+            });
+        }
+        
+        elements.presetGallery.appendChild(item);
+    });
+}
+
+function renderLegacyGallery() {
+    elements.galleryGrid.innerHTML = '';
+    
+    const allImages = getAllImages();
+    
+    if (allImages.length === 0) {
+        elements.galleryGrid.innerHTML = '<p style="grid-column: 1/-1; opacity: 0.7; padding: 2rem;">No images selected yet. Upload your landscape photos to get started!</p>';
+        return;
+    }
+    
+    allImages.forEach((image, index) => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
         if (index === state.currentImageIndex) {
             item.classList.add('active');
         }
         
+        const isPreset = index < state.selectedImages.length;
+        
         item.innerHTML = `
-            <img src="${image}" alt="Background ${index + 1}">
-            <button class="delete-btn" data-index="${index}" title="Delete">
+            <img src="${image}" alt="Background ${index + 1}" loading="lazy">
+            <button class="delete-btn" data-index="${index}" data-type="${isPreset ? 'preset' : 'uploaded'}" title="Remove">
                 <i class="fas fa-trash"></i>
             </button>
         `;
@@ -321,8 +639,16 @@ function renderGallery() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const index = parseInt(btn.getAttribute('data-index'));
-            if (confirm('Delete this image?')) {
-                deleteImage(index);
+            const type = btn.getAttribute('data-type');
+            
+            if (confirm('Remove this image?')) {
+                if (type === 'preset') {
+                    const path = state.selectedImages[index];
+                    deselectPresetImage(path);
+                } else {
+                    const uploadedIndex = index - state.selectedImages.length;
+                    deleteImage(uploadedIndex);
+                }
             }
         });
     });
@@ -436,7 +762,7 @@ function initEventListeners() {
     elements.imagesBtn.addEventListener('click', () => openOverlay('images-overlay'));
     elements.calendarBtn.addEventListener('click', () => openOverlay('calendar-overlay'));
     elements.settingsBtn.addEventListener('click', () => openOverlay('settings-overlay'));
-    elements.refreshQuoteBtn.addEventListener('click', displayRandomQuote);
+    elements.refreshQuoteBtn.addEventListener('click', fetchQuote); // Use fetchQuote instead of displayRandomQuote
     
     // Close buttons
     document.querySelectorAll('.close-btn').forEach(btn => {
@@ -466,6 +792,26 @@ function initEventListeners() {
     
     // Image upload
     elements.imageUpload.addEventListener('change', handleImageUpload);
+    
+    // Gallery tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.getAttribute('data-tab');
+            
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update active content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                if (content.getAttribute('data-content') === tabName) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        });
+    });
     
     // Calendar
     elements.connectCalendarBtn.addEventListener('click', connectCalendar);
@@ -502,18 +848,25 @@ function init() {
     // Initialize features
     updateTime();
     updateGreeting();
-    displayRandomQuote();
+    fetchQuote(); // Use API for quotes
     loadBackgroundImage();
     renderGallery();
     initParallax();
     initCalendar();
+    updateWeather(); // Initialize weather widget
     
     // Start intervals
     setInterval(updateTime, 1000);
     setInterval(updateGreeting, 60000); // Check greeting every minute
     
+    // Update weather every configured interval
+    if (CONFIG.weather.apiKey) {
+        setInterval(updateWeather, CONFIG.weather.updateInterval * 60 * 1000);
+    }
+    
     // Auto-cycle backgrounds
-    if (state.images.length > 1) {
+    const allImages = getAllImages();
+    if (allImages.length > 1) {
         setInterval(cycleBackground, state.settings.changeInterval * 60 * 1000);
     }
     
@@ -522,7 +875,9 @@ function init() {
     
     // Hide loading screen
     setTimeout(() => {
-        elements.loadingScreen.classList.add('hidden');
+        if (elements.loadingScreen) {
+            elements.loadingScreen.classList.add('hidden');
+        }
     }, 500);
 }
 
@@ -539,6 +894,11 @@ window.WelcomeDashboard = {
     CONFIG,
     addImage,
     deleteImage,
+    selectPresetImage,
+    deselectPresetImage,
     cycleBackground,
-    displayRandomQuote
+    fetchQuote,
+    displayRandomQuote,
+    updateWeather,
+    checkStorageSize
 };
