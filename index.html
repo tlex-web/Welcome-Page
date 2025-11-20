@@ -1,82 +1,188 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="X-UA-Compatible" content="ie=edge" />
-		<link rel="stylesheet" href="css/style.css" />
-		<link
-			href="https://fonts.googleapis.com/css?family=Quicksand&display=swap"
-			rel="stylesheet"
-		/>
-		<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
-		<title>Clock Page</title>
-	</head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Welcome Dashboard</title>
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- 3D Parallax Background Container -->
+    <div id="background-container" class="parallax-container">
+        <div class="parallax-layer" data-depth="0.1"></div>
+        <div class="parallax-layer" data-depth="0.2"></div>
+        <div class="parallax-layer" data-depth="0.3"></div>
+    </div>
 
-	<!-- Background-Image container -->
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="nav-btn" id="images-btn" title="Manage Images">
+                <i class="fas fa-images"></i>
+            </button>
+            <button class="nav-btn" id="calendar-btn" title="Calendar & Tasks">
+                <i class="fas fa-calendar-alt"></i>
+            </button>
+            <button class="nav-btn" id="settings-btn" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" id="refresh-quote-btn" title="New Quote">
+                <i class="fas fa-refresh"></i>
+            </button>
+        </div>
+    </nav>
 
-	<body id="background-image">
-		<!-- Project Seletion -->
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Clock Widget -->
+        <div class="glass-card clock-card">
+            <div class="time-display" id="time"></div>
+            <div class="date-display" id="date"></div>
+        </div>
 
-		<div class="project-icon">
-			<i class="fas fa-folder-open fa-5x"></i>
-		</div>
+        <!-- Greeting Widget -->
+        <div class="glass-card greeting-card">
+            <h1 class="greeting" id="greeting">Good Morning</h1>
+            <div class="name-container">
+                <span id="name" contenteditable="true" class="editable-name">Tim</span>
+                <i class="fas fa-edit edit-icon"></i>
+            </div>
+        </div>
 
-		<div class="project-overlay">
-			<div class="projects">
-				<i class="fas fa-blog"></i>
-				<a href="https://optimistic-haibt-c4e9b3.netlify.app">Blog</a>
-			</div>
-			<div class="projects">
-				<i class="fas fa-tree"></i>
-				<a href="https://hungry-mestorf-5e871d.netlify.app">Natours</a>
-			</div>
-		</div>
+        <!-- Motivation Quote Widget -->
+        <div class="glass-card quote-card">
+            <div class="quote-content">
+                <i class="fas fa-quote-left quote-icon"></i>
+                <p class="quote-text" id="motivation">Loading inspiration...</p>
+            </div>
+        </div>
+    </main>
 
-		<!-- Centered Clock and Text -->
+    <!-- Image Management Overlay -->
+    <div class="overlay" id="images-overlay">
+        <div class="overlay-content glass-panel">
+            <div class="overlay-header">
+                <h2><i class="fas fa-images"></i> Image Gallery</h2>
+                <button class="close-btn" data-overlay="images-overlay">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="overlay-body">
+                <div class="upload-section">
+                    <label for="image-upload" class="upload-label">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Upload Images</span>
+                        <input type="file" id="image-upload" accept="image/*" multiple hidden>
+                    </label>
+                    <p class="upload-hint">Select multiple landscape images for best results</p>
+                </div>
+                <div class="gallery-grid" id="gallery-grid">
+                    <!-- Images will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
 
-		<div class="clock">
-			<time id="time"></time>
+    <!-- Calendar & Tasks Overlay -->
+    <div class="overlay" id="calendar-overlay">
+        <div class="overlay-content glass-panel">
+            <div class="overlay-header">
+                <h2><i class="fas fa-calendar-alt"></i> Calendar & Tasks</h2>
+                <button class="close-btn" data-overlay="calendar-overlay">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="overlay-body">
+                <div class="calendar-section">
+                    <div class="calendar-auth" id="calendar-auth">
+                        <div class="auth-info">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Connect Your Calendar</h3>
+                            <p>To view your meetings and tasks, configure your calendar integration:</p>
+                            <ul class="auth-steps">
+                                <li><strong>Outlook/Microsoft 365:</strong> Register an app in Azure AD</li>
+                                <li><strong>Google Calendar:</strong> Create OAuth credentials in Google Cloud Console</li>
+                                <li>Update the configuration in <code>js/app.js</code></li>
+                            </ul>
+                            <button class="btn-primary" id="connect-calendar-btn">
+                                <i class="fas fa-plug"></i> Setup Instructions
+                            </button>
+                        </div>
+                    </div>
+                    <div class="calendar-connected" id="calendar-connected" style="display: none;">
+                        <div class="upcoming-events">
+                            <h3>Upcoming Events</h3>
+                            <div id="events-list" class="events-list">
+                                <!-- Events will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="tasks-section">
+                            <h3>Tasks</h3>
+                            <div id="tasks-list" class="tasks-list">
+                                <!-- Tasks will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-			<h1>
-				<span id="greeting"></span>
-				<span id="name" contenteditable="true">Tim</span>
-			</h1>
+    <!-- Settings Overlay -->
+    <div class="overlay" id="settings-overlay">
+        <div class="overlay-content glass-panel">
+            <div class="overlay-header">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <button class="close-btn" data-overlay="settings-overlay">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="overlay-body">
+                <div class="settings-group">
+                    <h3>Background Settings</h3>
+                    <label class="setting-item">
+                        <span>Parallax Effect</span>
+                        <input type="checkbox" id="parallax-toggle" checked>
+                    </label>
+                    <label class="setting-item">
+                        <span>Auto-Change Interval (minutes)</span>
+                        <input type="number" id="change-interval" min="1" max="60" value="10">
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <h3>Display Settings</h3>
+                    <label class="setting-item">
+                        <span>24-Hour Time Format</span>
+                        <input type="checkbox" id="time-format-toggle" checked>
+                    </label>
+                    <label class="setting-item">
+                        <span>Show Seconds</span>
+                        <input type="checkbox" id="show-seconds-toggle" checked>
+                    </label>
+                </div>
+                <div class="settings-group">
+                    <button class="btn-danger" id="reset-btn">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-			<h2 id="motivation"></h2>
-		</div>
+    <!-- Loading Indicator -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loader"></div>
+    </div>
 
-		<!-- Credits -->
-
-		<footer class="footer">
-			<div class="image-source">
-				<p class="pexel">
-					All background photos are
-					<a href="https://optimistic-haibt-c4e9b3.netlify.app/"
-						>mine</a
-					>
-				</p>
-			</div>
-			<div class="copyright">
-				<p class="lead">
-					All rights reserved &copy; <span id="year"></span>
-				</p>
-			</div>
-		</footer>
-
-		<script
-			src="https://kit.fontawesome.com/db98e725f6.js"
-			crossorigin="anonymous"
-		></script>
-		<script src="js/helpers.js"></script>
-		<script src="js/year.js"></script>
-		<script src="js/greeting.js"></script>
-		<script src="js/motivation.js"></script>
-		<script src="js/projects.js"></script>
-		<script
-			type="text/javascript"
-			src="js/main.js"
-			charset="utf-8"
-		></script>
-	</body>
+    <!-- Main Application Script -->
+    <script src="js/app.js"></script>
+</body>
 </html>

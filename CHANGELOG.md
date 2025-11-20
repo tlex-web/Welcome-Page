@@ -1,0 +1,172 @@
+# Changelog
+
+All notable changes to the Welcome Dashboard project.
+
+## [2.0.0] - 2025-11-20
+
+### 🎨 Complete Redesign
+- **NEW:** Modern glassmorphism UI design with frosted glass effects
+- **NEW:** Gradient background overlays with backdrop blur
+- **NEW:** Smooth animations and transitions throughout
+- **NEW:** Fully responsive design for all screen sizes
+
+### ✨ New Features
+
+#### Image Management
+- **NEW:** Upload your own background images
+- **NEW:** Visual gallery with thumbnail previews
+- **NEW:** Click to select active background
+- **NEW:** Delete images individually
+- **NEW:** Auto-cycling between images (configurable interval)
+- **NEW:** Images stored in browser localStorage (persistent)
+- **NEW:** Support for multiple image uploads at once
+
+#### 3D Parallax Effect
+- **NEW:** Mouse-tracking parallax background
+- **NEW:** Multi-layer depth effect
+- **NEW:** Configurable parallax intensity (3 layers with different depths)
+- **NEW:** Mobile device orientation support
+- **NEW:** Toggle parallax on/off in settings
+
+#### Enhanced Time & Greetings
+- **NEW:** Larger, more prominent clock display
+- **NEW:** Full date with day of week
+- **NEW:** Configurable time format (12/24 hour)
+- **NEW:** Toggle seconds display
+- **NEW:** Gradient text effects
+
+#### Motivational Quotes
+- **NEW:** 20+ inspirational quotes built-in
+- **NEW:** Refresh button for instant new quote
+- **NEW:** Beautiful typography with glass card
+- **NEW:** Quote icon decoration
+
+#### Calendar Integration (Ready)
+- **NEW:** Microsoft Outlook/Teams calendar support structure
+- **NEW:** Google Calendar integration structure
+- **NEW:** Setup instructions in-app
+- **NEW:** Events and tasks display UI
+- **NEW:** OAuth authentication ready
+- **REQUIRES:** API credentials configuration (see SETUP.md)
+
+#### Settings Panel
+- **NEW:** Dedicated settings overlay
+- **NEW:** Parallax effect toggle
+- **NEW:** Background change interval configuration
+- **NEW:** Time format preferences
+- **NEW:** Show/hide seconds
+- **NEW:** Reset to defaults button
+- **NEW:** All settings persisted in localStorage
+
+#### Navigation
+- **NEW:** Modern navigation bar with icons
+- **NEW:** Quick access to all features
+- **NEW:** Smooth overlay transitions
+- **NEW:** Keyboard shortcuts (ESC to close overlays)
+
+### 🗑️ Removed
+- **REMOVED:** Legacy JavaScript files:
+  - `greeting.js` (consolidated into app.js)
+  - `helpers.js` (consolidated into app.js)
+  - `main.js` (consolidated into app.js)
+  - `motivation.js` (consolidated into app.js)
+  - `projects.js` (removed - replaced with calendar)
+  - `year.js` (consolidated into app.js)
+- **REMOVED:** Project selection overlay (replaced with calendar feature)
+- **REMOVED:** Old footer with credits
+- **REMOVED:** External quote API dependency (now uses local quotes)
+
+### 🔧 Technical Improvements
+- **NEW:** Single modular JavaScript file (`app.js`)
+- **NEW:** ES6+ modern JavaScript syntax
+- **NEW:** CSS custom properties (CSS variables)
+- **NEW:** Better performance with optimized animations
+- **NEW:** Improved localStorage management
+- **NEW:** Better error handling
+- **NEW:** Code comments and documentation
+- **NEW:** Netlify configuration file
+- **NEW:** .gitignore file
+- **NEW:** VS Code extensions recommendations
+
+### 📚 Documentation
+- **NEW:** Comprehensive README.md with features overview
+- **NEW:** SETUP.md with detailed deployment instructions
+- **NEW:** Calendar integration setup guides
+- **NEW:** Troubleshooting section
+- **NEW:** Code examples for customization
+- **NEW:** Browser compatibility information
+
+### 🎯 Design System
+- **NEW:** Consistent color scheme with CSS variables
+- **NEW:** Inter font family throughout
+- **NEW:** Font Awesome 6 icons
+- **NEW:** Glass morphism design pattern
+- **NEW:** Consistent spacing and sizing
+- **NEW:** Hover states and feedback
+- **NEW:** Loading screen with animation
+
+### 📱 Responsive Design
+- **NEW:** Mobile-first approach
+- **NEW:** Tablet optimization
+- **NEW:** Desktop enhancements
+- **NEW:** Touch-friendly controls
+- **NEW:** Adaptive layouts
+
+### 🔒 Security & Best Practices
+- **NEW:** Content Security Policy headers (in netlify.toml)
+- **NEW:** Secure API credential handling instructions
+- **NEW:** localStorage data encapsulation
+- **NEW:** Input validation for file uploads
+
+### ⚡ Performance
+- **NEW:** CSS animations using transform (GPU accelerated)
+- **NEW:** Optimized image loading
+- **NEW:** Lazy initialization
+- **NEW:** Efficient event listeners
+- **NEW:** Browser caching headers
+
+## [1.0.0] - Previous Version
+
+### Features (Legacy)
+- Basic clock display
+- Time-based greeting
+- Random background from 17 preset images
+- External motivational quotes API
+- Project selection overlay
+- Static footer with credits
+- Basic CSS styling
+
+---
+
+## Migration Guide (1.0 → 2.0)
+
+### What You Need to Do:
+
+1. **Images:**
+   - Old images (0.jpg - 16.jpg) in `/img/` folder can be kept or removed
+   - Upload your images through the new gallery interface
+   - They'll be stored in browser localStorage
+
+2. **Name:**
+   - Your saved name from before should carry over automatically
+   - If not, just click to edit it again
+
+3. **No Action Required:**
+   - All new features work immediately
+   - No database or server setup needed
+   - Just open index.html or deploy to Netlify
+
+4. **Optional Setup:**
+   - Configure calendar integration if desired (see SETUP.md)
+   - Customize colors in CSS variables
+   - Adjust parallax settings
+
+### Breaking Changes:
+- Old JavaScript files no longer used (removed)
+- Project overlay replaced with calendar feature
+- Quote API changed from external to internal
+- Different localStorage keys (old data won't carry over except name)
+
+---
+
+**Note:** This is a complete rewrite with modern web technologies and design patterns.
