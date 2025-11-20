@@ -9,7 +9,7 @@ A vanilla JavaScript browser homepage with glassmorphism UI, 3D parallax backgro
 - **`index.html`** - Single-page app with three overlays (images, calendar, settings)
 - **`js/app.js`** - Modular vanilla JS (no framework). Exports `window.WelcomeDashboard` API
 - **`css/style.css`** - CSS custom properties (`:root` variables), glassmorphism effects
-- **`netlify/functions/`** - Serverless functions for secure API proxying (weather, quotes, facts, jokes, word-of-day)
+- **`netlify/functions/`** - Serverless functions for secure API proxying (weather, quotes, facts, jokes, word-of-day, ical-proxy)
 
 ### State Management
 All state lives in `localStorage` with namespaced keys (`welcomePage_*`):
@@ -19,6 +19,9 @@ All state lives in `localStorage` with namespaced keys (`welcomePage_*`):
 - `currentImage` - Active background index
 - `lastWeather`, `lastQuote`, `lastFact`, `lastJoke`, `wordOfDay` - Cached API responses
 - `contentType` - Current content type (quote/fact/joke/word)
+- `calendarUrl` - ICS calendar feed URL
+- `calendarEvents` - Cached calendar events (JSON array)
+- `calendarTimestamp` - Last calendar fetch timestamp
 
 State object in `app.js` mirrors localStorage and is single source of truth.
 
@@ -252,66 +255,202 @@ function selectPresetImage(path) {
 
 **Upload feature removed** to prevent QuotaExceededError. See `STORAGE_CLEANUP.md` for migration instructions.
 
-### Calendar Authentication Patterns
+### Calendar Integration - iCal Feed Implementation
 
-**Microsoft Graph API (Outlook/Teams)**
+**Current Implementation**: Simple iCal feed approach (no authentication required)
+
+Perfect for university/school Outlook accounts without admin permissions. No Microsoft Graph API needed!
+
+**Architecture**:
 ```javascript
-// Add MSAL library to index.html
-<script src="https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js"></script>
+// 1. User gets ICS URL from Outlook Web (Settings → Shared calendars → Publish)
+// 2. User pastes URL in dashboard
+// 3. URL stored in localStorage: 'welcomePage_calendarUrl'
+// 4. Netlify Function proxies iCal feed to avoid CORS
+// 5. iCal.js library parses events
+// 6. Display next 5 upcoming events
+```
 
-// Initialize MSAL
-const msalConfig = {
-    auth: {
-        clientId: CONFIG.calendar.microsoft.clientId,
-        authority: 'https://login.microsoftonline.com/common',
-        redirectUri: window.location.origin
-    }
-};
-const msalInstance = new msal.PublicClientApplication(msalConfig);
-
-async function connectMicrosoftCalendar() {
-    const loginRequest = { scopes: ['Calendars.Read', 'Tasks.Read'] };
-    const response = await msalInstance.loginPopup(loginRequest);
-    const accessToken = response.accessToken;
+**Backend - Netlify Function** (`netlify/functions/ical-proxy.js`):
+```javascript
+exports.handler = async (event) => {
+    const url = event.queryStringParameters?.url;
     
-    // Fetch calendar events
-    const events = await fetch('https://graph.microsoft.com/v1.0/me/events?$top=5', {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-    displayEvents(await events.json());
-}
+    // Validate URL is from allowed domains
+    const allowedDomains = ['outlook.office365.com', 'outlook.office.com', 'outlook.live.com'];
+    const urlObj = new URL(url);
+    if (!allowedDomains.some(domain => urlObj.hostname.includes(domain))) {
+        return { statusCode: 403, body: 'Domain not allowed' };
+    }
+    
+    // Fetch iCal data
+    const response = await fetch(url);
+    const icalData = await response.text();
+    
+    return {
+        statusCode: 200,
+        headers: {
+            'Content-Type': 'text/calendar',
+            'Cache-Control': 'public, max-age=300' // 5-minute cache
+        },
+        body: icalData
+    };
+};
 ```
 
-**Google Calendar API**
+**Frontend - JavaScript Functions** (`js/app.js`):
 ```javascript
-// Add Google API library
-<script src="https://apis.google.com/js/api.js"></script>
-
-function initGoogleCalendar() {
-    gapi.load('client:auth2', () => {
-        gapi.client.init({
-            apiKey: CONFIG.calendar.google.apiKey,
-            clientId: CONFIG.calendar.google.clientId,
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-            scope: 'https://www.googleapis.com/auth/calendar.readonly'
-        });
-    });
+async function connectCalendar() {
+    const icalUrl = elements.icalUrlInput.value.trim();
+    
+    // Validate URL
+    if (!icalUrl || !icalUrl.startsWith('https://')) {
+        alert('Please enter a valid ICS URL');
+        return;
+    }
+    
+    // Save URL to localStorage
+    localStorage.setItem(CONFIG.storageKeys.calendarUrl, icalUrl);
+    state.calendarConnected = true;
+    
+    // Show connected view
+    elements.calendarAuth.style.display = 'none';
+    elements.calendarConnected.style.display = 'block';
+    
+    // Load events
+    await loadCalendarEvents();
 }
 
-async function connectGoogleCalendar() {
-    await gapi.auth2.getAuthInstance().signIn();
-    const response = await gapi.client.calendar.events.list({
-        calendarId: 'primary',
-        timeMin: new Date().toISOString(),
-        maxResults: 10,
-        singleEvents: true,
-        orderBy: 'startTime'
-    });
-    displayEvents(response.result.items);
+async function loadCalendarEvents() {
+    const icalUrl = localStorage.getItem(CONFIG.storageKeys.calendarUrl);
+    if (!icalUrl) return;
+    
+    try {
+        // Fetch via Netlify proxy
+        const response = await fetch(`/.netlify/functions/ical-proxy?url=${encodeURIComponent(icalUrl)}`);
+        const icalData = await response.text();
+        
+        // Parse with iCal.js
+        const jcalData = ICAL.parse(icalData);
+        const comp = new ICAL.Component(jcalData);
+        const vevents = comp.getAllSubcomponents('vevent');
+        
+        // Convert to event objects
+        const now = new Date();
+        const events = vevents
+            .map(vevent => {
+                const event = new ICAL.Event(vevent);
+                return {
+                    title: event.summary,
+                    start: event.startDate.toJSDate(),
+                    end: event.endDate.toJSDate(),
+                    location: event.location
+                };
+            })
+            .filter(event => event.start >= now) // Only upcoming
+            .sort((a, b) => a.start - b.start) // Sort by date
+            .slice(0, 5); // Next 5 events
+        
+        // Cache events (5-minute TTL)
+        localStorage.setItem(CONFIG.storageKeys.calendarEvents, JSON.stringify(events));
+        localStorage.setItem(CONFIG.storageKeys.calendarTimestamp, Date.now().toString());
+        
+        displayEvents(events);
+    } catch (error) {
+        console.error('Calendar error:', error);
+        // Show error UI
+    }
+}
+
+function displayEvents(events) {
+    if (!events.length) {
+        elements.eventsList.innerHTML = '<p>No upcoming events</p>';
+        return;
+    }
+    
+    elements.eventsList.innerHTML = events.map(event => {
+        const startDate = new Date(event.start);
+        const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const timeStr = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        
+        return `
+            <div class="event-card glass-card">
+                <div class="event-date">${startDate.getDate()}</div>
+                <div class="event-details">
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-time">${timeStr}</div>
+                    ${event.location ? `<div class="event-location">${event.location}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function checkCalendarConnection() {
+    const icalUrl = localStorage.getItem(CONFIG.storageKeys.calendarUrl);
+    if (icalUrl) {
+        state.calendarConnected = true;
+        elements.calendarAuth.style.display = 'none';
+        elements.calendarConnected.style.display = 'block';
+        
+        // Load cached events or fetch fresh
+        const cachedEvents = localStorage.getItem(CONFIG.storageKeys.calendarEvents);
+        const timestamp = localStorage.getItem(CONFIG.storageKeys.calendarTimestamp);
+        
+        if (cachedEvents && timestamp && (Date.now() - parseInt(timestamp)) < 5 * 60 * 1000) {
+            displayEvents(JSON.parse(cachedEvents));
+        } else {
+            loadCalendarEvents();
+        }
+    }
 }
 ```
 
-Store OAuth tokens in localStorage with expiry checks. Implement refresh token logic.
+**HTML Structure** (`index.html`):
+```html
+<div class="calendar-auth" id="calendar-auth">
+    <h3>Connect Your Outlook Calendar</h3>
+    <ol class="auth-steps">
+        <li>Open Outlook Web and sign in</li>
+        <li>Settings → View all Outlook settings</li>
+        <li>Calendar → Shared calendars</li>
+        <li>Publish a calendar → Copy ICS link</li>
+    </ol>
+    <input type="url" id="ical-url-input" placeholder="Paste ICS URL here...">
+    <button id="connect-calendar-btn">Connect</button>
+</div>
+
+<div class="calendar-connected" id="calendar-connected" style="display: none;">
+    <button id="disconnect-calendar-btn">Disconnect</button>
+    <button id="refresh-calendar-btn">Refresh Events</button>
+    <div id="events-list"></div>
+</div>
+```
+
+**Dependencies**:
+- iCal.js library (CDN): `<script src="https://cdn.jsdelivr.net/npm/ical.js@1.5.0/build/ical.min.js"></script>`
+
+**localStorage Keys**:
+- `welcomePage_calendarUrl` - ICS feed URL
+- `welcomePage_calendarEvents` - Cached event array (JSON)
+- `welcomePage_calendarTimestamp` - Cache timestamp
+
+**Benefits**:
+- ✅ No API keys required
+- ✅ No admin permissions needed (perfect for university accounts)
+- ✅ No OAuth flow complexity
+- ✅ Read-only access (secure)
+- ✅ Works with personal, Office 365, and university Outlook accounts
+- ✅ Simple user experience (just paste URL)
+- ✅ Privacy-friendly (URL stored locally only)
+
+**Alternative Approaches (Not Implemented)**:
+
+**Microsoft Graph API (Requires Admin)**:
+```javascript
+// Requires Azure AD app registration + admin consent
+// Good for: Enterprise apps with IT support
+// Bad for: University accounts, personal projects
 
 ### Useful Third-Party APIs
 
@@ -407,6 +546,14 @@ When modifying:
 8. Check that Netlify Functions work via `netlify dev` (not direct file:// opening)
 9. Verify content type persists across page refreshes
 10. Test preset image selection/deselection
+11. **Test calendar integration:**
+    - Connect with valid Outlook ICS URL
+    - Verify events display (next 5 upcoming)
+    - Test refresh events button
+    - Test disconnect button
+    - Verify calendar reconnects on page reload
+    - Test with invalid URL (should show error)
+    - Check 5-minute caching works
 
 ## Key Files Reference
 - `NETLIFY_SECURITY.md` - Deployment and API key security guide

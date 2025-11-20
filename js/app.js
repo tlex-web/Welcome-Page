@@ -17,7 +17,10 @@ const CONFIG = {
         lastFact: 'welcomePage_lastFact',
         lastJoke: 'welcomePage_lastJoke',
         wordOfDay: 'welcomePage_wordOfDay',
-        contentType: 'welcomePage_contentType'
+        contentType: 'welcomePage_contentType',
+        calendarUrl: 'welcomePage_calendarUrl',
+        calendarEvents: 'welcomePage_calendarEvents',
+        calendarTimestamp: 'welcomePage_calendarTimestamp'
     },
     defaultSettings: {
         parallaxEnabled: true,
@@ -151,8 +154,10 @@ const elements = {
     calendarAuth: document.getElementById('calendar-auth'),
     calendarConnected: document.getElementById('calendar-connected'),
     connectCalendarBtn: document.getElementById('connect-calendar-btn'),
+    disconnectCalendarBtn: document.getElementById('disconnect-calendar-btn'),
+    refreshCalendarBtn: document.getElementById('refresh-calendar-btn'),
+    icalUrlInput: document.getElementById('ical-url-input'),
     eventsList: document.getElementById('events-list'),
-    tasksList: document.getElementById('tasks-list'),
     
     // Settings
     parallaxToggle: document.getElementById('parallax-toggle'),
@@ -327,6 +332,8 @@ async function fetchWordOfDay() {
 }
 
 function displayContent(type, data) {
+    if (!elements.motivation) return;
+    
     state.currentContentType = type;
     localStorage.setItem(CONFIG.storageKeys.contentType, type);
     
@@ -363,7 +370,7 @@ function displayCachedFact() {
     if (cached) {
         const fact = JSON.parse(cached);
         displayContent('fact', fact);
-    } else {
+    } else if (elements.motivation) {
         elements.motivation.innerHTML = '<i class="fas fa-lightbulb quote-icon"></i> Did you know? The human brain can process images in as little as 13 milliseconds.';
     }
 }
@@ -373,7 +380,7 @@ function displayCachedJoke() {
     if (cached) {
         const joke = JSON.parse(cached);
         displayContent('joke', joke);
-    } else {
+    } else if (elements.motivation) {
         elements.motivation.innerHTML = '<i class="fas fa-laugh quote-icon"></i> Why did the programmer quit his job? Because he didn\'t get arrays! 😄';
     }
 }
@@ -383,12 +390,13 @@ function displayCachedWord() {
     if (cached) {
         const word = JSON.parse(cached);
         displayContent('word', word);
-    } else {
+    } else if (elements.motivation) {
         elements.motivation.innerHTML = '<i class="fas fa-book quote-icon"></i> <strong>serendipity</strong>: The occurrence of events by chance in a happy or beneficial way.';
     }
 }
 
 function displayRandomQuote() {
+    if (!elements.motivation) return;
     const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
     const quote = motivationalQuotes[randomIndex];
     elements.motivation.textContent = `"${quote.text}" — ${quote.author}`;
@@ -721,33 +729,202 @@ function renderPresetGallery() {
 }
 
 // ===== Calendar Integration =====
-function initCalendar() {
-    // Check if credentials are configured
-    const hasConfig = CONFIG.calendar.microsoft.clientId || CONFIG.calendar.google.clientId;
+async function connectCalendar() {
+    const icalUrl = elements.icalUrlInput.value.trim();
     
-    if (!hasConfig) {
-        showCalendarSetup();
+    // Validate URL
+    if (!icalUrl) {
+        alert('Please enter your calendar ICS URL');
+        return;
+    }
+    
+    if (!icalUrl.startsWith('https://')) {
+        alert('Calendar URL must start with https://');
+        return;
+    }
+    
+    // Validate it's an Outlook/Office 365 URL
+    const validDomains = ['outlook.office365.com', 'outlook.office.com', 'outlook.live.com'];
+    const url = new URL(icalUrl);
+    if (!validDomains.some(domain => url.hostname.includes(domain))) {
+        alert('Please use an Outlook/Office 365 calendar URL');
+        return;
+    }
+    
+    // Save URL
+    localStorage.setItem(CONFIG.storageKeys.calendarUrl, icalUrl);
+    state.calendarConnected = true;
+    
+    // Show connected view
+    elements.calendarAuth.style.display = 'none';
+    elements.calendarConnected.style.display = 'block';
+    
+    // Load events
+    await loadCalendarEvents();
+}
+
+function disconnectCalendar() {
+    if (confirm('Disconnect your calendar?')) {
+        localStorage.removeItem(CONFIG.storageKeys.calendarUrl);
+        localStorage.removeItem(CONFIG.storageKeys.calendarEvents);
+        localStorage.removeItem(CONFIG.storageKeys.calendarTimestamp);
+        state.calendarConnected = false;
+        
+        elements.calendarAuth.style.display = 'block';
+        elements.calendarConnected.style.display = 'none';
+        elements.icalUrlInput.value = '';
     }
 }
 
-function showCalendarSetup() {
-    elements.calendarAuth.style.display = 'block';
-    elements.calendarConnected.style.display = 'none';
+async function loadCalendarEvents() {
+    const icalUrl = localStorage.getItem(CONFIG.storageKeys.calendarUrl);
+    if (!icalUrl) return;
+    
+    // Show loading
+    if (elements.eventsList) {
+        elements.eventsList.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading events...</div>';
+    }
+    
+    try {
+        // Fetch via Netlify proxy
+        const response = await fetch(`/.netlify/functions/ical-proxy?url=${encodeURIComponent(icalUrl)}`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch calendar: ${response.statusText}`);
+        }
+        
+        const icalData = await response.text();
+        
+        // Parse iCal data using ical.js
+        const jcalData = ICAL.parse(icalData);
+        const comp = new ICAL.Component(jcalData);
+        const vevents = comp.getAllSubcomponents('vevent');
+        
+        // Convert to event objects
+        const now = new Date();
+        const events = vevents
+            .map(vevent => {
+                const event = new ICAL.Event(vevent);
+                return {
+                    title: event.summary,
+                    start: event.startDate.toJSDate(),
+                    end: event.endDate.toJSDate(),
+                    location: event.location,
+                    description: event.description
+                };
+            })
+            .filter(event => event.start >= now) // Only upcoming events
+            .sort((a, b) => a.start - b.start) // Sort by date
+            .slice(0, 5); // Next 5 events
+        
+        // Cache events
+        localStorage.setItem(CONFIG.storageKeys.calendarEvents, JSON.stringify(events));
+        localStorage.setItem(CONFIG.storageKeys.calendarTimestamp, Date.now().toString());
+        
+        // Display events
+        displayEvents(events);
+    } catch (error) {
+        console.error('Calendar error:', error);
+        if (elements.eventsList) {
+            elements.eventsList.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.7);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                    <p>Could not load calendar events</p>
+                    <p style="font-size: 0.85rem; opacity: 0.7;">${error.message}</p>
+                </div>
+            `;
+        }
+    }
 }
 
-function connectCalendar() {
-    alert('Calendar Integration Setup:\n\n' +
-          '1. For Microsoft Outlook/Teams:\n' +
-          '   - Go to Azure Portal (portal.azure.com)\n' +
-          '   - Register a new app in Azure AD\n' +
-          '   - Add "Calendars.Read" and "Tasks.Read" permissions\n' +
-          '   - Copy Client ID to js/app.js CONFIG.calendar.microsoft.clientId\n\n' +
-          '2. For Google Calendar:\n' +
-          '   - Go to Google Cloud Console\n' +
-          '   - Enable Calendar API\n' +
-          '   - Create OAuth credentials\n' +
-          '   - Copy credentials to js/app.js CONFIG.calendar.google\n\n' +
-          'After configuration, redeploy to Netlify.');
+function displayEvents(events) {
+    if (!elements.eventsList) return;
+    
+    if (events.length === 0) {
+        elements.eventsList.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.7);">
+                <i class="fas fa-calendar-check" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                <p>No upcoming events</p>
+            </div>
+        `;
+        return;
+    }
+    
+    elements.eventsList.innerHTML = events.map(event => {
+        const startDate = new Date(event.start);
+        const endDate = new Date(event.end);
+        
+        // Format date
+        const dateStr = startDate.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        // Format time
+        const startTime = startDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: !state.settings.timeFormat24
+        });
+        const endTime = endDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: !state.settings.timeFormat24
+        });
+        
+        return `
+            <div class="event-card glass-card" style="padding: 1rem; margin-bottom: 0.75rem; border-radius: 12px;">
+                <div style="display: flex; gap: 1rem; align-items: start;">
+                    <div style="text-align: center; min-width: 60px;">
+                        <div style="font-size: 1.5rem; font-weight: bold; line-height: 1;">${startDate.getDate()}</div>
+                        <div style="font-size: 0.75rem; opacity: 0.7; text-transform: uppercase;">${startDate.toLocaleDateString('en-US', { month: 'short' })}</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">${event.title}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <i class="fas fa-clock" style="width: 14px;"></i>
+                            <span>${startTime} - ${endTime}</span>
+                        </div>
+                        ${event.location ? `
+                            <div style="font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-map-marker-alt" style="width: 14px;"></i>
+                                <span>${event.location}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function checkCalendarConnection() {
+    const icalUrl = localStorage.getItem(CONFIG.storageKeys.calendarUrl);
+    if (icalUrl) {
+        state.calendarConnected = true;
+        elements.calendarAuth.style.display = 'none';
+        elements.calendarConnected.style.display = 'block';
+        elements.icalUrlInput.value = icalUrl;
+        
+        // Check if we have cached events
+        const cachedEvents = localStorage.getItem(CONFIG.storageKeys.calendarEvents);
+        const timestamp = localStorage.getItem(CONFIG.storageKeys.calendarTimestamp);
+        
+        if (cachedEvents && timestamp) {
+            const age = Date.now() - parseInt(timestamp);
+            if (age < 5 * 60 * 1000) { // Less than 5 minutes old
+                displayEvents(JSON.parse(cachedEvents));
+                return;
+            }
+        }
+        
+        // Otherwise load fresh events
+        loadCalendarEvents();
+    } else {
+        elements.calendarAuth.style.display = 'block';
+        elements.calendarConnected.style.display = 'none';
+    }
 }
 
 // ===== Settings Management =====
@@ -930,6 +1107,12 @@ function initEventListeners() {
     
     // Calendar
     elements.connectCalendarBtn.addEventListener('click', connectCalendar);
+    if (elements.disconnectCalendarBtn) {
+        elements.disconnectCalendarBtn.addEventListener('click', disconnectCalendar);
+    }
+    if (elements.refreshCalendarBtn) {
+        elements.refreshCalendarBtn.addEventListener('click', () => loadCalendarEvents());
+    }
     
     // Settings
     elements.parallaxToggle.addEventListener('change', saveSettings);
@@ -967,7 +1150,7 @@ function init() {
     loadBackgroundImage();
     renderGallery();
     initParallax();
-    initCalendar();
+    checkCalendarConnection(); // Check if calendar is connected
     updateWeather(); // Initialize weather widget
     
     // Start intervals

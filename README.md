@@ -38,21 +38,21 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 - **Configurable Units** - Choose between Celsius and Fahrenheit
 
 ### 🖼️ Image Management
-- **Two Image Sources**:
-  - **Upload Images** - Add your own photos (stored in browser localStorage)
-  - **Preset Images** - Select from images in the `img/` folder (lightweight, uses paths)
-- **Tabbed Gallery** - Clean interface to manage both uploaded and preset images
-- **Storage Monitor** - Real-time warning when approaching localStorage limits
-- **Smart Selection** - Click to set as background, select/deselect preset images
-- **Auto-Cycling** - Automatically changes background at set intervals
+- **Preset Images** - Select from images in the `img/` folder (no localStorage limits!)
+- **Easy Gallery** - Simple interface to select/deselect preset images
+- **Smart Selection** - Visual indicators show selected images
+- **Auto-Cycling** - Automatically changes background at set intervals (configurable)
 - **3D Parallax Effect** - Each image gets the beautiful depth effect
+- **Add Your Own** - Just drop image files in `img/` folder and update `CONFIG.presetImages` array
 
-### 📅 Calendar Integration (Ready for Setup)
-- **Microsoft Outlook/Teams** - Ready for Office 365 calendar integration
-- **Google Calendar** - Ready for Google Calendar integration
-- **Upcoming Events** - View your meetings at a glance
-- **Tasks Display** - See your to-do items
-- **Setup Instructions** - Clear instructions provided in the app
+### 📅 Calendar Integration
+- **Outlook Calendar** - Connect via iCal feed (no admin permissions needed!)
+- **Simple Setup** - Just paste your calendar's ICS URL
+- **Upcoming Events** - View next 5 events with date, time, and location
+- **Auto-Refresh** - Events cached for 5 minutes, manual refresh available
+- **Persistent Connection** - Calendar URL saved locally for automatic reconnection
+- **Privacy First** - Calendar URL stored in browser only, never on server
+- **Perfect for University Accounts** - Works without Microsoft Graph API admin setup
 
 ### ⚙️ Settings
 - **Parallax Toggle** - Enable/disable 3D parallax effect
@@ -67,8 +67,9 @@ A beautiful, modern welcome page with glassmorphism design, 3D parallax effects,
 1. Clone or download this repository
 2. Open `index.html` in your browser
 3. **Optional**: Configure API keys for weather and dynamic content (see guides below)
-4. Upload your landscape images or add preset images to `img/` folder
+4. Add preset images to `img/` folder and update `CONFIG.presetImages` in `js/app.js`
 5. Customize your name and settings
+6. **Optional**: Connect Outlook calendar via iCal feed (no API setup required!)
 
 ### 📚 Documentation Guides
 
@@ -169,61 +170,39 @@ For best results with the 3D parallax effect:
 - **High resolution** (1920x1080 or higher)
 - **Scenic photos** - Mountains, beaches, forests, cityscapes
 - **Good depth** - Images with foreground/background elements work best
-- **File size considerations**:
-  - **Uploaded images**: Stored in localStorage (~5MB browser limit total)
-  - **Preset images**: Use `img/` folder - no size limits!
+- **File size**: No limits! Images stored as file paths, not in localStorage
+- **Adding images**: Place files in `img/` folder and add paths to `CONFIG.presetImages` array
 
-## 🔐 Calendar Setup (Optional)
+## 📅 Calendar Setup (Optional)
 
-### Microsoft Outlook/Teams Calendar
+### Outlook Calendar via iCal Feed
 
-1. **Register Azure AD Application**
-   - Go to [Azure Portal](https://portal.azure.com)
-   - Navigate to "Azure Active Directory" → "App registrations"
-   - Click "New registration"
-   - Name: "Welcome Dashboard Calendar"
-   - Redirect URI: Your Netlify URL
+**No API keys, no admin permissions, no complex setup required!**
 
-2. **Configure Permissions**
-   - In your app, go to "API permissions"
-   - Add "Microsoft Graph" permissions:
-     - `Calendars.Read`
-     - `Tasks.Read`
-   - Grant admin consent
+1. **Get Your Calendar ICS URL**
+   - Open [Outlook Web](https://outlook.office.com)
+   - Click Settings ⚙️ → View all Outlook settings
+   - Go to Calendar → Shared calendars
+   - Under "Publish a calendar", select your calendar
+   - Click **Publish** and copy the **ICS link**
 
-3. **Get Credentials**
-   - Copy "Application (client) ID"
-   - Open `js/app.js`
-   - Update `CONFIG.calendar.microsoft.clientId` with your Client ID
+2. **Connect in Dashboard**
+   - Click the calendar icon in the navigation
+   - Paste your ICS URL
+   - Click **Connect**
 
-4. **Implement Authentication**
-   - Add MSAL.js library for authentication
-   - Update the calendar integration functions
-   - See [Microsoft Graph API documentation](https://docs.microsoft.com/en-us/graph/auth-v2-user)
+3. **Done!**
+   - Your next 5 upcoming events will display
+   - Events refresh every 5 minutes automatically
+   - URL saved locally in your browser for automatic reconnection
+   - Click **Refresh Events** anytime for latest updates
 
-### Google Calendar
+**Works with:**
+- Personal Outlook accounts (outlook.com, outlook.live.com)
+- Office 365 / Microsoft 365 accounts
+- University/School Outlook accounts (no admin needed!)
 
-1. **Create Google Cloud Project**
-   - Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create new project
-   - Enable "Google Calendar API"
-
-2. **Create OAuth Credentials**
-   - Go to "APIs & Services" → "Credentials"
-   - Create "OAuth 2.0 Client ID"
-   - Application type: Web application
-   - Authorized redirect URI: Your Netlify URL
-
-3. **Configure**
-   - Copy Client ID and API Key
-   - Update `js/app.js`:
-     - `CONFIG.calendar.google.clientId`
-     - `CONFIG.calendar.google.apiKey`
-
-4. **Implement**
-   - Add Google API client library
-   - Implement OAuth flow
-   - See [Google Calendar API documentation](https://developers.google.com/calendar/api/guides/overview)
+**Privacy:** Your calendar URL is stored in browser localStorage only - never sent to any server except Outlook to fetch your events.
 
 ## 🎯 Browser Compatibility
 
@@ -246,14 +225,32 @@ For best results with the 3D parallax effect:
 
 ```
 my_welcome_page/
-├── index.html          # Main HTML file
+├── index.html                    # Main HTML file
 ├── css/
-│   └── style.css       # All styles with glassmorphism
+│   └── style.css                 # All styles with glassmorphism
 ├── js/
-│   └── app.js          # Main application logic
+│   └── app.js                    # Main application logic (~1200 lines)
 ├── img/
-│   └── favicon.ico     # Site favicon
-└── README.md           # This file
+│   ├── 0.jpg - 8.jpg            # Preset background images
+│   └── favicon.ico               # Site favicon
+├── netlify/
+│   └── functions/                # Serverless API proxies
+│       ├── weather.js            # OpenWeatherMap proxy
+│       ├── api-ninjas-quote.js   # Quotes proxy
+│       ├── fact.js               # Facts proxy
+│       ├── joke.js               # Jokes proxy
+│       ├── word-of-day.js        # Word definitions proxy
+│       └── ical-proxy.js         # Calendar feed proxy
+├── .github/
+│   └── copilot-instructions.md   # AI agent guidance
+├── netlify.toml                  # Netlify configuration
+├── README.md                     # This file
+├── SETUP.md                      # Deployment guide
+├── CHANGELOG.md                  # Version history
+├── API_KEYS_GUIDE.md            # API key signup instructions
+├── DEPLOYMENT_CHECKLIST.md       # Testing checklist
+├── NETLIFY_SECURITY.md          # Security best practices
+└── STORAGE_CLEANUP.md           # localStorage cleanup guide
 ```
 
 ## 🔧 Customization
@@ -286,20 +283,27 @@ Adjust the depth values in HTML:
 
 ## 🐛 Troubleshooting
 
-**Images not uploading?**
-- Check browser localStorage quota (usually 5-10MB)
-- Try smaller image file sizes
-- Clear browser cache and try again
+**Images not showing?**
+- Verify image files exist in `img/` folder
+- Check paths in `CONFIG.presetImages` array match actual files
+- Refresh browser cache (Ctrl+F5)
 
 **Parallax not working?**
 - Check if "Parallax Effect" is enabled in Settings
 - Some browsers limit JavaScript on file:// URLs - deploy to Netlify
-- Try a different browser
+- Try a different browser (Chrome/Edge recommended)
 
 **Calendar not connecting?**
-- Verify API credentials are correctly configured
-- Check browser console for error messages
-- Ensure redirect URIs match exactly
+- Verify you copied the **ICS link** (not HTML link) from Outlook
+- Ensure URL starts with `https://outlook.office365.com` or similar
+- Check browser console (F12) for error messages
+- Try refreshing events manually
+- Make sure calendar is published in Outlook settings
+
+**Weather/quotes not loading?**
+- API keys must be configured in Netlify environment variables
+- Test locally with `netlify dev` command
+- Check [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for setup steps
 
 ## 📝 License
 

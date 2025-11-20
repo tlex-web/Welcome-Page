@@ -718,6 +718,31 @@ body {
     margin-top: 1rem;
 }
 
+.event-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: var(--transition);
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+.loading i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
 .event-item,
 .task-item {
     background: rgba(255, 255, 255, 0.08);

@@ -5,17 +5,33 @@
 1. **Open the project**
    - Simply open `index.html` in your web browser
    - No build process or server required!
+   - For full features (weather, quotes, calendar), use `netlify dev` command
 
-2. **Upload your images**
-   - Click the images icon (📷) in the top left
-   - Select "Upload Images"
-   - Choose your landscape photos (recommended: 1920x1080 or higher)
-   - Your images are stored locally in browser localStorage
+2. **Add preset images**
+   - Place your landscape photos in `img/` folder
+   - Open `js/app.js` and add paths to `CONFIG.presetImages` array:
+     ```javascript
+     presetImages: [
+         'img/0.jpg',
+         'img/1.jpg',
+         'img/your-photo.jpg'
+     ]
+     ```
+   - Click images icon (📷) in app to select/deselect images
 
 3. **Customize**
    - Click your name to edit it
    - Click the gear icon (⚙️) for settings
-   - Click the refresh icon (🔄) for a new motivational quote
+   - Click content selector buttons for different content types
+   - Click calendar icon to connect Outlook calendar (optional)
+
+4. **Test with Netlify Dev** (for API features)
+   ```powershell
+   npm install -g netlify-cli
+   cd "c:\Users\tim\MyDocuments\Programming\my_welcome_page"
+   netlify dev
+   # Open http://localhost:8888
+   ```
 
 ## Deploying to Netlify
 
@@ -88,17 +104,66 @@
 
 ## Setting Up Calendar Integration
 
-### Microsoft Outlook/Teams Calendar
+### Outlook Calendar via iCal Feed
+
+**✅ No admin permissions required - perfect for university/school accounts!**
 
 **Prerequisites:**
-- Microsoft 365 account or Outlook.com account
-- Azure AD access (for app registration)
+- Outlook account (personal, Office 365, or university)
+- Access to Outlook Web
 
 **Steps:**
 
-1. **Register Application in Azure**
-   ```
-   1. Go to https://portal.azure.com
+1. **Get Your Calendar ICS URL**
+   - Open https://outlook.office.com and sign in
+   - Click Settings ⚙️ (top right) → **View all Outlook settings**
+   - Navigate to **Calendar** → **Shared calendars**
+   - Under **Publish a calendar**, select your calendar from dropdown
+   - Click **Publish** button
+   - Copy the **ICS link** (looks like `https://outlook.office365.com/.../calendar.ics`)
+   - ⚠️ Note: Copy the **ICS** link, not the HTML link
+
+2. **Connect in Dashboard**
+   - Open your welcome dashboard
+   - Click the calendar icon in the navigation bar
+   - Paste your ICS URL into the input field
+   - Click **Connect** button
+
+3. **Done!**
+   - Your next 5 upcoming events will display
+   - Events automatically refresh every 5 minutes
+   - Calendar URL saved in browser localStorage
+   - Click **Refresh Events** anytime for latest updates
+   - Click **Disconnect** to remove calendar
+
+**How it works:**
+- iCal feed is a standard calendar format (no API required)
+- Your calendar URL is stored locally in browser only
+- Netlify Function proxies requests to avoid CORS issues
+- Events parsed with iCal.js library
+- Read-only access (perfect for display purposes)
+
+**Privacy & Security:**
+- Calendar URL stored in browser localStorage only
+- URL never sent to any server except Outlook (to fetch events)
+- No authentication tokens stored
+- No server-side storage
+- Disconnect anytime to clear URL from browser
+
+**Supported Accounts:**
+- Personal Outlook (outlook.com, outlook.live.com)
+- Microsoft 365 / Office 365
+- University/School Outlook accounts
+- Organization Outlook accounts
+
+**Troubleshooting:**
+- **"Could not load events"** - Verify you copied the ICS link (not HTML)
+- **No events showing** - Ensure calendar is published in Outlook settings
+- **Events not updating** - Click "Refresh Events" button manually
+- **Invalid URL error** - URL must be from outlook.office365.com or similar domain
+## Features Overview
+
+### ✅ Working Out of the Box
    2. Navigate to "Azure Active Directory"
    3. Click "App registrations" → "New registration"
    4. Application name: "Welcome Dashboard"
@@ -262,43 +327,54 @@
 ### ✅ Working Out of the Box
 - Real-time clock with date
 - Dynamic time-based greetings
-- Motivational quotes (20+ quotes)
-- Editable name (persisted)
+- Four content types (quotes, facts, jokes, words)
+- Editable name (persisted in localStorage)
 - 3D parallax effect
-- Image upload & management
+- Preset image management
 - Settings customization
 - Responsive design
-- All data stored locally
+- All data stored locally in browser
 
-### 🔧 Requires Setup
-- Microsoft Outlook/Teams calendar integration
-- Google Calendar integration
-- Custom domain (optional)
+### 🔧 Requires Setup (Optional)
+- Weather widget (needs OpenWeatherMap API key in Netlify)
+- Dynamic content (needs API Ninjas key in Netlify)
+- Outlook calendar (needs ICS URL from Outlook Web - no API!)
+- Custom domain (Netlify feature)
+
+## Troubleshooting
 
 ## Troubleshooting
 
 ### Images Not Showing?
-- **Check file size:** Keep images under 5MB each
-- **Check format:** Use JPG, PNG, or WebP
-- **Storage limit:** Browser localStorage has ~5-10MB total limit
-- **Clear cache:** Try clearing browser cache and re-uploading
+- **Check file paths:** Verify images exist in `img/` folder
+- **Check CONFIG:** Ensure paths in `CONFIG.presetImages` match actual files
+- **Check format:** Use JPG, PNG, or WebP formats
+- **Clear cache:** Try Ctrl+F5 to hard refresh browser
 
 ### Parallax Not Working?
-- **Check settings:** Ensure parallax is enabled in Settings
-- **Browser support:** Some older browsers don't support CSS transform-3d
+- **Check settings:** Ensure parallax is enabled in Settings overlay
+- **Browser support:** Some older browsers don't support CSS 3D transforms
 - **File protocol:** Parallax works better on deployed sites (not file://)
+- **Try different browser:** Chrome/Edge recommended
 
 ### Calendar Won't Connect?
-- **Check credentials:** Verify Client ID and API keys are correct
-- **Check redirect URI:** Must match exactly (including https://)
-- **Check permissions:** Ensure you granted necessary permissions
-- **Console errors:** Open browser DevTools (F12) and check Console tab
+- **Check URL:** Must be ICS link from Outlook (starts with https://outlook.office365.com)
+- **Check published:** Ensure calendar is published in Outlook Web settings
+- **Check console:** Open DevTools (F12) and check Console tab for errors
+- **Try refresh:** Click "Refresh Events" button after connecting
+- **Verify domain:** URL must be from allowed domains (outlook.office365.com, outlook.office.com, outlook.live.com)
 
-### LocalStorage Full?
+### Weather/Quotes Not Loading?
+- **Check API keys:** Must be configured in Netlify environment variables
+- **Test locally:** Use `netlify dev` command to test functions
+- **Check console:** Open DevTools (F12) for error messages
+- **See docs:** Check [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for setup
+
+### LocalStorage Issues?
 ```javascript
 // Check storage usage in browser console:
 console.log('LocalStorage size:', 
-    JSON.stringify(localStorage).length / 1024 / 1024, 'MB');
+    JSON.stringify(localStorage).length / 1024, 'KB');
 
 // Clear if needed:
 localStorage.clear();

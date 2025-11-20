@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- iCal.js for calendar parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/ical.js@1.5.0/build/ical.min.js"></script>
 </head>
 <body>
     <!-- 3D Parallax Background Container -->
@@ -125,30 +127,44 @@
                 <div class="calendar-section">
                     <div class="calendar-auth" id="calendar-auth">
                         <div class="auth-info">
-                            <i class="fas fa-info-circle"></i>
-                            <h3>Connect Your Calendar</h3>
-                            <p>To view your meetings and tasks, configure your calendar integration:</p>
-                            <ul class="auth-steps">
-                                <li><strong>Outlook/Microsoft 365:</strong> Register an app in Azure AD</li>
-                                <li><strong>Google Calendar:</strong> Create OAuth credentials in Google Cloud Console</li>
-                                <li>Update the configuration in <code>js/app.js</code></li>
-                            </ul>
-                            <button class="btn-primary" id="connect-calendar-btn">
-                                <i class="fas fa-plug"></i> Setup Instructions
-                            </button>
+                            <i class="fas fa-calendar-plus" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                            <h3>Connect Your Outlook Calendar</h3>
+                            <p style="margin-bottom: 1.5rem;">Follow these steps to connect your calendar:</p>
+                            <ol class="auth-steps" style="text-align: left; max-width: 600px; margin: 0 auto 1.5rem;">
+                                <li>Open <a href="https://outlook.office.com" target="_blank" style="color: var(--accent-color);">Outlook Web</a> and sign in</li>
+                                <li>Click <strong>Settings</strong> (⚙️) → <strong>View all Outlook settings</strong></li>
+                                <li>Go to <strong>Calendar</strong> → <strong>Shared calendars</strong></li>
+                                <li>Under <strong>Publish a calendar</strong>, select your calendar</li>
+                                <li>Click <strong>Publish</strong> and copy the <strong>ICS link</strong></li>
+                            </ol>
+                            <div style="display: flex; gap: 0.5rem; max-width: 600px; margin: 0 auto;">
+                                <input type="url" 
+                                       id="ical-url-input" 
+                                       placeholder="Paste your ICS calendar URL here..." 
+                                       style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white;">
+                                <button class="btn-primary" id="connect-calendar-btn" style="white-space: nowrap;">
+                                    <i class="fas fa-link"></i> Connect
+                                </button>
+                            </div>
+                            <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 1rem;">
+                                <i class="fas fa-lock"></i> Your calendar URL is stored locally in your browser only.
+                            </p>
                         </div>
                     </div>
                     <div class="calendar-connected" id="calendar-connected" style="display: none;">
-                        <div class="upcoming-events">
-                            <h3>Upcoming Events</h3>
-                            <div id="events-list" class="events-list">
-                                <!-- Events will be loaded here -->
-                            </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3><i class="fas fa-calendar-check" style="color: var(--accent-color);"></i> Calendar Connected</h3>
+                            <button class="btn-secondary" id="disconnect-calendar-btn">
+                                <i class="fas fa-unlink"></i> Disconnect
+                            </button>
                         </div>
-                        <div class="tasks-section">
-                            <h3>Tasks</h3>
-                            <div id="tasks-list" class="tasks-list">
-                                <!-- Tasks will be loaded here -->
+                        <button class="btn-secondary" id="refresh-calendar-btn" style="margin-bottom: 1rem;">
+                            <i class="fas fa-sync-alt"></i> Refresh Events
+                        </button>
+                        <div class="upcoming-events">
+                            <h4 style="margin-bottom: 1rem;">Upcoming Events</h4>
+                            <div id="events-list" class="events-list">
+                                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading events...</div>
                             </div>
                         </div>
                     </div>

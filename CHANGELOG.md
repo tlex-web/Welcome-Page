@@ -2,6 +2,64 @@
 
 All notable changes to the Welcome Dashboard project.
 
+## [2.3.0] - 2025-11-20
+
+### 📅 Calendar Integration
+- **NEW:** Outlook calendar integration via iCal feeds
+- **NEW:** `netlify/functions/ical-proxy.js` - CORS proxy for calendar feeds
+- **NEW:** iCal.js library integration for parsing calendar data
+- **NEW:** Simple setup - no API keys or admin permissions required
+- **NEW:** Display next 5 upcoming events with date, time, location
+- **NEW:** 5-minute event caching with manual refresh option
+- **NEW:** Calendar URL persistence in localStorage
+- **NEW:** Glassmorphism event cards matching app design
+- **NEW:** Connect/disconnect calendar functionality
+- **NEW:** Auto-reconnect on page load
+- **IMPROVED:** Perfect for university/school accounts without Graph API access
+
+### 🖼️ Image Management Simplified
+- **CHANGED:** Removed upload feature to prevent localStorage quota errors
+- **IMPROVED:** Preset images only - use file paths from `img/` folder
+- **REMOVED:** Image upload input and functionality
+- **REMOVED:** Uploaded images tab from gallery
+- **REMOVED:** Storage size warnings (no longer needed)
+- **IMPROVED:** No localStorage limits for images
+- **IMPROVED:** Faster page loads with direct file references
+
+### 🐛 Bug Fixes
+- **FIXED:** Null reference errors in production (added null checks to all display functions)
+- **FIXED:** Weather widget not appearing (geolocation fallback chain)
+- **FIXED:** QuotaExceededError when uploading images (feature removed)
+- **FIXED:** Quote icon appearing on all content types (now dynamic per type)
+- **FIXED:** Quote text wrapping (increased card width to 1200px)
+
+### 📖 Documentation
+- **UPDATED:** README.md with calendar setup instructions
+- **UPDATED:** SETUP.md with iCal feed guide
+- **UPDATED:** CHANGELOG.md with all recent changes
+- **UPDATED:** copilot-instructions.md with calendar implementation
+
+## [2.2.0] - 2025-11-20
+
+### 🌟 API Ninjas Integration
+- **NEW:** API Ninjas integration for multiple content types
+- **NEW:** `netlify/functions/api-ninjas-quote.js` - Quotes with 5 categories
+- **NEW:** `netlify/functions/fact.js` - Random interesting facts
+- **NEW:** `netlify/functions/joke.js` - Clean jokes
+- **NEW:** `netlify/functions/word-of-day.js` - Random words with definitions
+- **NEW:** Content selector UI with 4 icon buttons (quote/fact/joke/word)
+- **NEW:** Content type persistence across page refreshes
+- **NEW:** Smart caching for all content types
+- **NEW:** Fallback to hardcoded content when API unavailable
+- **NEW:** Dynamic icons per content type (quote, lightbulb, laugh, book)
+
+### 🌧️ Weather Widget Enhancements
+- **IMPROVED:** 3-level fallback chain (geolocation → IP-based → default location)
+- **IMPROVED:** IP geolocation via ipapi.co when GPS denied/unavailable
+- **IMPROVED:** Default to Zurich coordinates as last resort
+- **FIXED:** Weather not appearing when Netlify Functions enabled
+- **FIXED:** Geolocation permission handling
+
 ## [2.1.0] - 2025-11-20
 
 ### 🔐 Security Enhancements
