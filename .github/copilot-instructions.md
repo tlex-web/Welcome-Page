@@ -317,17 +317,13 @@ All API integrations should:
 - No transpilation - use browser-compatible JS only
 - No preprocessors - plain CSS with native custom properties
 - CDN dependencies (Font Awesome, Google Fonts) in `index.html`
-- **API Keys**: Use Netlify environment variables for production:
-  1. Add to Netlify dashboard: Site settings → Environment variables
-  2. Access via Netlify Functions (serverless):
-     ```javascript
-     // netlify/functions/weather.js
-     exports.handler = async (event) => {
-         const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?...&appid=${process.env.WEATHER_API_KEY}`);
-         return { statusCode: 200, body: JSON.stringify(await response.json()) };
-     };
-     ```
-  3. Call from frontend: `fetch('/.netlify/functions/weather?lat=40&lon=-74')`
+- **API Keys**: Use Netlify Functions for secure API key management:
+  1. Create functions in `netlify/functions/` directory
+  2. Add environment variables in Netlify dashboard (Site settings → Environment variables)
+  3. Functions access keys via `process.env.VARIABLE_NAME`
+  4. Frontend calls `/.netlify/functions/function-name` instead of external APIs
+  5. Example: `weather.js` and `quote.js` functions proxy API calls
+  6. See `NETLIFY_SECURITY.md` for complete implementation guide
 
 ### Performance Considerations
 - Parallax runs on `mousemove` - already throttled via CSS `transition: 0.1s`

@@ -22,13 +22,31 @@ const CONFIG = {
         showSeconds: true
     },
     weather: {
-        apiKey: '', // Get from openweathermap.org/api (free tier)
+        apiKey: '', // For local dev only - use Netlify Functions in production
+        useNetlifyFunction: true, // Set to true when deployed to Netlify
         units: 'metric', // or 'imperial'
         updateInterval: 30 // minutes
     },
     presetImages: [
         // Add paths to images in img/ folder here
         // Example: 'img/background1.jpg', 'img/background2.jpg'
+        'img/0.jpg',
+        'img/1.jpg',
+        'img/2.jpg',
+        'img/3.jpg',
+        'img/4.jpg',
+        'img/5.jpg',
+        'img/6.jpg',
+        'img/7.jpg',
+        'img/8.jpg',
+        'img/9.jpg',
+        'img/10.jpg',
+        'img/11.jpg',
+        'img/12.jpg',
+        'img/13.jpg',
+        'img/14.jpg',
+        'img/15.jpg',
+        'img/16.jpg',
     ],
     calendar: {
         // Microsoft Graph API (Outlook/Teams)
@@ -182,12 +200,18 @@ function updateGreeting() {
 // ===== Motivational Quote =====
 async function fetchQuote() {
     try {
-        // Try to fetch from Quotable API
-        const response = await fetch('https://api.quotable.io/random?tags=inspirational');
+        // Use Netlify Function if available, otherwise direct API
+        const endpoint = window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost'
+            ? '/.netlify/functions/quote'
+            : 'https://api.quotable.io/random?tags=inspirational';
+        
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('API request failed');
         
-        const quote = await response.json();
-        const quoteData = { text: quote.content, author: quote.author };
+        const data = await response.json();
+        
+        // Handle both API formats (direct Quotable API and our function)
+        const quoteData = data.text ? data : { text: data.content, author: data.author };
         
         // Cache to localStorage
         localStorage.setItem(CONFIG.storageKeys.lastQuote, JSON.stringify(quoteData));
@@ -256,10 +280,25 @@ async function updateWeather() {
         // Get user's position
         const position = await getCurrentPosition();
         
-        // Fetch weather data
-        const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&units=${CONFIG.weather.units}&appid=${CONFIG.weather.apiKey}`
-        );
+        // Determine if we should use Netlify Function or direct API
+        const useNetlifyFunction = CONFIG.weather.useNetlifyFunction && 
+            (window.location.hostname.includes('netlify.app') || window.location.hostname !== 'localhost');
+        
+        let response;
+        if (useNetlifyFunction) {
+            // Use Netlify Function (API key is secure on server)
+            response = await fetch(
+                `/.netlify/functions/weather?lat=${position.latitude}&lon=${position.longitude}`
+            );
+        } else {
+            // Use direct API (for local development)
+            if (!CONFIG.weather.apiKey) {
+                throw new Error('Weather API key not configured for local development');
+            }
+            response = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&units=${CONFIG.weather.units}&appid=${CONFIG.weather.apiKey}`
+            );
+        }
         
         if (!response.ok) throw new Error('Weather API request failed');
         

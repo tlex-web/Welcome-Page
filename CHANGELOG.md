@@ -4,6 +4,16 @@ All notable changes to the Welcome Dashboard project.
 
 ## [2.1.0] - 2025-11-20
 
+### 🔐 Security Enhancements
+- **NEW:** Netlify Functions for secure API key management
+- **NEW:** `netlify/functions/weather.js` - Server-side weather API proxy
+- **NEW:** `netlify/functions/quote.js` - Server-side quote API proxy
+- **NEW:** Automatic detection of Netlify environment for function usage
+- **NEW:** `NETLIFY_SECURITY.md` - Comprehensive security setup guide
+- **NEW:** `.env.example` - Template for local development
+- **IMPROVED:** API keys never exposed to browser
+- **IMPROVED:** Functions use environment variables from Netlify dashboard
+
 ### 🌤️ Weather Widget
 - **NEW:** Real-time weather display with OpenWeatherMap API integration
 - **NEW:** Automatic geolocation detection

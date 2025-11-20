@@ -121,7 +121,8 @@ This site is optimized for Netlify deployment:
 3. **Environment Variables (for API Keys)**
    - In Netlify dashboard, go to Site settings → Environment variables
    - Add `WEATHER_API_KEY` with your OpenWeatherMap key
-   - Use Netlify Functions to proxy API calls securely (see instructions file)
+   - **Secure**: Uses Netlify Functions to hide API keys from browser
+   - See `NETLIFY_SECURITY.md` for detailed security setup guide
 
 4. **Custom Domain (Optional)**
    - In Netlify dashboard, go to Domain settings
